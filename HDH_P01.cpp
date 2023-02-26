@@ -72,13 +72,9 @@ int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512])
 }
 
 
-int main() {
+void readFAT32(LPCWSTR path) {
     unsigned char sector[512];
-
-    ReadSector(L"\\\\.\\E:",0, sector);
-
-
-
+    ReadSector(path, 0, sector);
     printf("Byte per sector : %u \n", charToInt(&sector[bytePerSectorIndex], 2));
     printf("Cluster per sector : %u \n", charToInt(&sector[ScIndex], 1));
     printf("Cluster per Bootsector %u \n", charToInt(&sector[SbIndex], 2));
@@ -95,9 +91,12 @@ int main() {
         printf("%c", sector[i]);
     }
     printf("\n");
-    //static_cast<int>(*&sector[ScIndex]));
+}
 
-    // // release handles 
+
+int main() {
+
+    readFAT32(L"\\\\.\\E:");
     return 0;
 
 }
