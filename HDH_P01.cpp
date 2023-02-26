@@ -3,15 +3,18 @@
 #include <iostream>
 #include <string>
 using namespace std;
-
-#define ScIndex 13
+#define bytePerSectorIndex 11 // size la 2
+#define ScIndex 13 // size la 1
 #define SbIndex 14 // size la 2
 #define nFIndex 16 // size la 1
+#define SectorperTrackIndex 24 // size 2
+#define numberOfHeadIndex 26 // size la 2
 #define SvIndex 32 // size 4
 #define SfIndex 36 // size 4
 #define RDETstartIndex 44 // size 4
 #define sectorEmptyClusterIndex 48 // size 2
 #define sectorBackUpBSIndex 50 // size 2    
+
 
 unsigned int charToInt(unsigned char* arr, int size) {
     unsigned char* temp = new unsigned char[size];
@@ -71,23 +74,27 @@ int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512])
 
 int main() {
     unsigned char sector[512];
-    ReadSector(L"\\\\.\\E:",1, sector);
-    for (int i = 0; i < 512; ++i) {
-        if (i % 16 == 0 && i != 0) printf("\n");
-        printf(" %x ", sector[i]);
-    }
-    printf("\n");
+
+    ReadSector(L"\\\\.\\E:",0, sector);
 
 
 
+    printf("Byte per sector : %u \n", charToInt(&sector[bytePerSectorIndex], 2));
     printf("Cluster per sector : %u \n", charToInt(&sector[ScIndex], 1));
     printf("Cluster per Bootsector %u \n", charToInt(&sector[SbIndex], 2));
     printf("Number of FAT table : %u \n", charToInt(&sector[nFIndex], 1));
+    printf("Sector per track : %u \n", charToInt(&sector[SectorperTrackIndex], 2));
+    printf("Number of head : %u \n", charToInt(&sector[numberOfHeadIndex], 2));
     printf("Volume size : %u \n", charToInt(&sector[SvIndex], 4));
     printf("FAT table size : %u \n", charToInt(&sector[SfIndex], 4));
     printf("Cluster staring of RDET : %u \n", charToInt(&sector[RDETstartIndex], 4));
     printf("Empty cluster info sector : %u \n", charToInt(&sector[sectorEmptyClusterIndex], 2));
     printf("Backup bootsector : %u \n", charToInt(&sector[sectorBackUpBSIndex], 2));
+    printf("Type of FAT : ");
+    for (int i = 82; i < 90; i++) {
+        printf("%c", sector[i]);
+    }
+    printf("\n");
     //static_cast<int>(*&sector[ScIndex]));
 
     // // release handles 
