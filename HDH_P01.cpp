@@ -103,7 +103,7 @@ FAT32 readFAT32(LPCWSTR path) {
     ReadSector(path, 0, sector);
     printf("Byte per sector : %u \n", charToInt(&sector[bytePerSectorIndex], 2));
     printf("Cluster per sector : %u \n", charToInt(&sector[ScIndex], 1));
-    printf("Cluster per Bootsector %u \n", charToInt(&sector[SbIndex], 2));
+    printf("Sector per Bootsector %u \n", charToInt(&sector[SbIndex], 2));
     printf("Number of FAT table : %u \n", charToInt(&sector[nFIndex], 1));
     printf("Sector per track : %u \n", charToInt(&sector[SectorperTrackIndex], 2));
     printf("Number of head : %u \n", charToInt(&sector[numberOfHeadIndex], 2));
