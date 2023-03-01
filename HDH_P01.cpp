@@ -124,40 +124,20 @@ FAT32 readFAT32(LPCWSTR path) {
 
 
 int main() {
-    /*
-    //for (int i = 0; i < 8 * pow(2, 30); i = i + 512) {
-        unsigned char sector[512];
-        ReadSector(L"\\\\.\\E:", 16777216, sector);
-        //if ( sector[0] == '0') continue;
-        //else  printf(" %d ", 16777216 / 4096);
-        for (int j = 0; j < 512; j++) {
-            if (j % 16 == 0) {
-                printf("\n");
-             //   if (j <= 10) printf("0");
-              //  printf("%x  ", j);
-            }
-            if (sector[j] >= 0 && sector[j] <= 15) printf(" 0%x ", sector[j]);
-            else printf(" %c ", sector[j]);
-            
+    FAT32 currentDisk = readFAT32(L"\\\\.\\E:");
+    int RDETindex = currentDisk.byteStartOfRDET();
+    unsigned char sector[512];
+    ReadSector(L"\\\\.\\E:", RDETindex, sector);
+    for (int j = 0; j < 512; j++) {
+        if (j % 16 == 0) {
+            printf("\n");
+            //   if (j <= 10) printf("0");
+             //  printf("%x  ", j);
         }
-        printf("\n");
-    //}
-    */
-   FAT32 currentDisk = readFAT32(L"\\\\.\\E:");
-   int RDETindex = currentDisk.byteStartOfRDET();
-   unsigned char sector[512];
-   ReadSector(L"\\\\.\\E:", RDETindex, sector);
-   for (int j = 0; j < 512; j++) {
-       if (j % 16 == 0) {
-           printf("\n");
-           //   if (j <= 10) printf("0");
-            //  printf("%x  ", j);
-       }
-       if (sector[j] >= 0 && sector[j] <= 15) printf(" 0%x ", sector[j]);
-       else printf(" %c ", sector[j]);
+        if (sector[j] >= 0 && sector[j] <= 15) printf(" 0%x ", sector[j]);
+        else printf(" %c ", sector[j]);
 
-   }
-   printf("\n");
-   return 0;
-
+    }
+    printf("\n");
+    return 0;
 }
