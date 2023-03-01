@@ -1,0 +1,4 @@
+﻿  HDH_P01.cpp
+C:\Users\Admin\source\repos\HDH\HDH_P01.cpp(256,13): warning C4129: '_': unrecognized character escape sequence
+C:\Users\Admin\source\repos\HDH\HDH_P01.cpp(134): warning C4715: 'ReadSector': not all control paths return a value
+  HDH_P01.vcxproj -> C:\Users\Admin\source\repos\HDH\x64\Debug\HDH_P01.exe
