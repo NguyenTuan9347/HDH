@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <iostream>
 #include <string>
+#include <vector>
 using namespace std;
 
 #define bytePerSectorIndex 11 // size la 2
@@ -68,6 +69,73 @@ public:
         return (nF * Sf + Sb) * bytePerSector;
     }
 
+};
+
+class Component
+{
+protected:
+	Component* parent = nullptr;
+	string name, extension;
+	long size = 0;
+public:
+	Component() {};
+	virtual string getName() = 0;
+	virtual string getExtension() = 0;
+	virtual long getSize() = 0;
+	virtual void AddComponent(Component* obj)
+	{
+
+	}
+	virtual void RemoveComponent(Component* obj)
+	{
+
+	}
+	virtual ~Component() {
+		if (parent != nullptr) delete parent;
+	}
+};
+class Folder : public Component
+{
+	vector<Component*> components;
+public:
+	string getName() { return name; }
+	string getExtension() { return ""; }
+	long getSize() {
+		for (int i = 0; i < components.size(); ++i)
+		{
+			size += components[i]->getSize();
+		}
+		return size;
+	}
+	void AddComponent(Component* obj)
+	{
+		if (obj != NULL)
+		{
+			components.push_back(obj);
+		}
+	}
+	~Folder()
+	{
+		for (int i = 0; i < components.size(); ++i)
+		{
+			delete components[i];
+		}
+		components.clear();
+	}
+};
+class File : public Component
+{
+public:
+	string getName() { return name; }
+	string getExtension() { return extension; }
+	void setSize(int value)
+	{
+		size = value;
+	}
+	long getSize()
+	{
+		return size;
+	}
 };
 
 NTFS readNTFS(LPCWSTR path);
