@@ -1,9 +1,9 @@
-#pragma once
+    #pragma once
 #include <cstdio>
 #include <windows.h>
 #include <iostream>
-#include <string>
 #include <vector>
+#include <string>
 using namespace std;
 
 #define bytePerSectorIndex 11 // size la 2
@@ -34,6 +34,7 @@ void quanlywindow();
 void printfNtfs();
 void prinfFat32();
 void GotoXY(int x, int y);
+
 
 class NTFS {
 public:
@@ -71,6 +72,8 @@ public:
 
 };
 
+NTFS* readNTFS(LPCWSTR path);
+FAT32* readFAT32(LPCWSTR path);
 class Component
 {
 protected:
@@ -137,6 +140,3 @@ public:
 		return size;
 	}
 };
-
-NTFS readNTFS(LPCWSTR path);
-FAT32 readFAT32(LPCWSTR path);

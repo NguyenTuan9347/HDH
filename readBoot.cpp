@@ -1,6 +1,6 @@
 #include "HDH.h"
 
-NTFS readNTFS(LPCWSTR path) {
+NTFS* readNTFS(LPCWSTR path) {
     unsigned char sector[512];
     ReadSector(path, 0, sector);
     printf("Bytes Per Sector : %u \n", charToInt(&sector[bytePerSectorIndex], 2));
@@ -14,10 +14,10 @@ NTFS readNTFS(LPCWSTR path) {
     printf("Clusters Per File Record Segment : %u \n", charToInt(&sector[ClustersPerFileRecordSegment], 4));
     printf("Clusters Per Index Buffer : % u \n", charToInt(&sector[ClustersPerIndexBuffer], 1));
     printf("\n");
-    return NTFS(sector);
+    return new NTFS(sector);
 }
 
-FAT32 readFAT32(LPCWSTR path) {
+FAT32* readFAT32(LPCWSTR path) {
     unsigned char sector[512];
     ReadSector(path, 0, sector);
     printf("Byte per sector : %u \n", charToInt(&sector[bytePerSectorIndex], 2));
@@ -36,5 +36,5 @@ FAT32 readFAT32(LPCWSTR path) {
         printf("%c", sector[i]);
     }
     printf("\n");
-    return FAT32(sector);
+    return new FAT32(sector);
 }
