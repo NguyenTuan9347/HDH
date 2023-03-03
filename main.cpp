@@ -120,11 +120,19 @@ int main()
                     system("cls");
                     if (GetAsyncKeyState(VK_RETURN))
                     { // Enter key pressed
+                        
                         switch (menu_fat32)
                         {
                         case 0:
                         {
-                            fat32Disk = readFAT32(L"\\\\.\\E:");
+                            cout << "Drive letter of USB?: ";
+                            string disk = "\\\\.\\?:";
+                            char name;
+                            cin >> name;
+                            disk[4] = name;
+                            wstring str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
+                            LPCWSTR path = str_turned_to_wstr.c_str();
+                            fat32Disk = readFAT32(path);
                             system("pause");
                             break;
                         }
@@ -216,7 +224,14 @@ int main()
                         {
                         case 0:
                         {
-                            ntfsDisk = readNTFS(L"\\\\.\\E:");
+                            cout << "Drive letter of USB?: ";
+                            string disk = "\\\\.\\?:";
+                            char name;
+                            cin >> name;
+                            disk[4] = name;
+                            wstring str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
+                            LPCWSTR path = str_turned_to_wstr.c_str();
+                            ntfsDisk = readNTFS(path);
                             system("pause");
                             break;
                         }

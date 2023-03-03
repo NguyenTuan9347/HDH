@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 #include <vector>
+#include <codecvt>
+#include <locale>
 using namespace std;
 
 #define bytePerSectorIndex 11 // size la 2

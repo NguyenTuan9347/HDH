@@ -93,7 +93,7 @@ void printfNtfs()
     GotoXY(40, 12);
     cout << " |  \\| |  | |  | |__ | (___  " << endl;
     GotoXY(40, 13);
-    cout << " | . ` |  | |  |  __| \___ \\ " << endl;
+    cout << " | . ` |  | |  |  __| \\___ \\ " << endl;
     GotoXY(40, 14);
     cout << " | |\\  |  | |  | |    ____) |" << endl;
     GotoXY(40, 15);
