@@ -1,7 +1,8 @@
-#pragma once
+    #pragma once
 #include <cstdio>
 #include <windows.h>
 #include <iostream>
+#include <vector>
 #include <string>
 #include <vector>
 using namespace std;
@@ -34,6 +35,7 @@ void quanlywindow();
 void printfNtfs();
 void prinfFat32();
 void GotoXY(int x, int y);
+
 
 class NTFS {
 public:
@@ -71,6 +73,8 @@ public:
 
 };
 
+NTFS* readNTFS(LPCWSTR path);
+FAT32* readFAT32(LPCWSTR path);
 class Component
 {
 protected:
@@ -137,6 +141,3 @@ public:
 		return size;
 	}
 };
-
-NTFS readNTFS(LPCWSTR path);
-FAT32 readFAT32(LPCWSTR path);

@@ -5,6 +5,8 @@ int main()
     int menu_item = 0;
     int x = 21;
     bool menu = true;
+    FAT32* fat32Disk = NULL;
+    NTFS* ntfsDisk = NULL;
     while (menu)
     {
         quanlywindow();
@@ -122,13 +124,7 @@ int main()
                         {
                         case 0:
                         {
-                            NTFS currentDisk = readNTFS(L"\\\\.\\D:");
-                            unsigned char sector[512];
-                            ReadSector(L"\\\\.\\/D:", 1, sector);
-                            for (int i = 0; i < 512; ++i) {
-                                if (i % 16 == 0 && i != 0) printf("\n");
-                                printf(" %4x ", sector[i]);
-                            }
+                            fat32Disk = readFAT32(L"\\\\.\\E:");
                             system("pause");
                             break;
                         }
@@ -197,7 +193,6 @@ int main()
                         menu_ntfs++;
                         continue;
                     }
-
                     if (GetAsyncKeyState(VK_UP) && ntf != 21) // up button pressed
                     {
                         GotoXY(18 + 25, ntf);
@@ -221,21 +216,7 @@ int main()
                         {
                         case 0:
                         {
-                            FAT32 currentDisk = readFAT32(L"\\\\.\\E:");
-                            int RDETindex = currentDisk.byteStartOfRDET();
-                            unsigned char sector[512];
-                            ReadSector(L"\\\\.\\E:", RDETindex, sector);
-                            for (int j = 0; j < 512; j++) {
-                                if (j % 16 == 0) {
-                                    printf("\n");
-                                    //   if (j <= 10) printf("0");
-                                     //  printf("%x  ", j);
-                                }
-                                if (sector[j] >= 0 && sector[j] <= 15) printf(" 0%x ", sector[j]);
-                                else printf(" %c ", sector[j]);
-
-                            }
-                            printf("\n");
+                            ntfsDisk = readNTFS(L"\\\\.\\E:");
                             system("pause");
                             break;
                         }
@@ -257,8 +238,6 @@ int main()
                             mntf = false;
                             break;
                         }
-
-
                         system("cls");
 
                     }
@@ -274,17 +253,16 @@ int main()
                 break;
             }
 
-
             default:
                 menu = false;
                 break;
             }
-
-
             system("cls");
 
         }
 
     }
+    if (ntfsDisk != NULL) delete ntfsDisk;
+    if (fat32Disk != NULL) delete fat32Disk;
     return 0;
 }
