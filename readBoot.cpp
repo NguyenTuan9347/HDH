@@ -66,7 +66,7 @@ void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], 
 	
 }
 
-void readEntries(LPCWSTR  drive, int readPoint)
+void readEntries(LPCWSTR  drive, int readPoint,Component*& root)
 {
 	int sectorOfRDET = 8;
 	//int count = 0;
@@ -115,7 +115,6 @@ void readEntries(LPCWSTR  drive, int readPoint)
 					{
 						//fullName.erase();
 						handleFakeEntries(drive, readPoint, sector, checkValid, fullName);
-
 					}
 					else {
 						readPoint += 512;

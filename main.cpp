@@ -10,6 +10,7 @@ int main()
     FAT32* fat32Disk = NULL;
     NTFS* ntfsDisk = NULL;
     LPCWSTR* path = NULL;
+    Component* root = NULL;
     wstring str_turned_to_wstr;
     wstring temp = L"Xin chào thế giới.txt";
    
@@ -136,11 +137,12 @@ int main()
                             char name;
                             cin >> name;
                             disk[4] = name;
+                            
                             str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
                             path = new LPCWSTR(str_turned_to_wstr.c_str());
-                            
+                            root = new Folder(str_turned_to_wstr, 0, -1, NULL);
                             fat32Disk = readFAT32(*path);
-                            
+                      
                             system("pause");
                             break;
                         }
@@ -152,7 +154,7 @@ int main()
                                 system("pause");
                             }
                             else { 
-                                readEntries(*path, fat32Disk->byteStartOfRDET());
+                                readEntries(*path, fat32Disk->byteStartOfRDET(),root);
                                 wcout << endl;
                             }
                             break;
@@ -245,6 +247,7 @@ int main()
                             disk[4] = name;
                             str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
                             path = new LPCWSTR(str_turned_to_wstr.c_str());
+                            root = new Folder(str_turned_to_wstr, 0, -1, NULL);
                             ntfsDisk = readNTFS(*path);
                             system("pause");
                             break;

@@ -36,15 +36,6 @@ using namespace std;
 #define sectorBackUpBSIndex 50 // size 2    
 
 unsigned int charToInt(unsigned char* arr, int size);
-int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512]);
-void drawMenu();
-void quanlywindow();
-void printfNtfs();
-void prinfFat32();
-void GotoXY(int x, int y);
-void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
-void readEntries(LPCWSTR  drive, int readPoint);
-void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
 
 class NTFS {
 public:
@@ -86,13 +77,27 @@ FAT32* readFAT32(LPCWSTR path);
 class Component
 {
 protected:
-	Component* parent = nullptr;
-	string name, extension;
+	wstring name, extension;
+	unsigned int dataIndex;
 	long size = 0;
 public:
-	virtual string getName() = 0;
-	virtual string getExtension() = 0;
+	virtual wstring getName() = 0;
+	virtual wstring getExtension() = 0;
 	virtual long getSize() = 0;
+	Component(wstring fullName, long size, int clusterIndex) {
+		int flag = 0;
+		for (int i = 0; i < fullName.size(); i++) {
+			if (fullName[i] == L'.' && flag == 0) flag++;
+			if (flag == 0) {
+				name.push_back(fullName[i]);
+			}
+			else {
+				extension.push_back(fullName[i]);
+			}
+		}
+		this->size = size;
+		dataIndex = clusterIndex;
+	}
 	virtual void AddComponent(Component* obj)
 	{
 
@@ -102,15 +107,19 @@ public:
 
 	}
 	virtual ~Component() {
-		if (parent != nullptr) delete parent;
 	}
 };
-class Folder : public Component
-{
+
+class Folder : public Component {
+	Component* my_parent = nullptr;
 	vector<Component*> components;
+	int id_Folder;
 public:
-	string getName() { return name; }
-	string getExtension() { return ""; }
+	Folder(wstring fullName, long size, int startIndexData, Component* parent) : Component(fullName,size,startIndexData) {
+		my_parent = parent;
+	}
+	wstring getName() { return name; }
+	wstring getExtension() { return extension; }
 	long getSize() {
 		for (int i = 0; i < components.size(); ++i)
 		{
@@ -137,9 +146,11 @@ public:
 class File : public Component
 {
 public:
-	File(string namePara, string extensionPara) { name = namePara; extension = extensionPara; }
-	string getName() { return name; }
-	string getExtension() { return extension; }
+	File(wstring fullName, long size, int clusterIndex) : Component(fullName,size,clusterIndex) {
+
+	}
+	wstring getName() { return name; }
+	wstring getExtension() { return extension; }
 	void setSize(int value)
 	{
 		size = value;
@@ -150,3 +161,12 @@ public:
 	}
 };
 
+int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512]);
+void drawMenu();
+void quanlywindow();
+void printfNtfs();
+void prinfFat32();
+void GotoXY(int x, int y);
+void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
+void readEntries(LPCWSTR  drive, int readPoint, Component*& root);
+void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
