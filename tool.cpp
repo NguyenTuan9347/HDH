@@ -128,7 +128,7 @@ void quanlywindow()
 }
 void drawMenu()
 {
-    wchar_t vborder = 205, hborder = 186, lowerleft = 200, lowerright = 188, upperleft = 201, upperright = 187;
+    wchar_t vborder = 9552, hborder = 9553, lowerleft =9562, lowerright = 9565, upperleft = 9556, upperright = 9559;
     GotoXY(17 + 25, 19);
     for (int i = 0; i < 26; i++)
         wcout << vborder;
