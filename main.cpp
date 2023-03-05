@@ -151,11 +151,7 @@ int main()
                                 wcout << "No data of disk has been found, please try again " << endl;
                                 system("pause");
                             }
-                            else {   
-                                for (int i = 0; i < temp.size(); i++) {
-                                    wprintf(L" %x ", temp[i]);
-                                }
-                                wcout << endl;
+                            else { 
                                 readEntries(*path, fat32Disk->byteStartOfRDET());
                                 wcout << endl;
                             }

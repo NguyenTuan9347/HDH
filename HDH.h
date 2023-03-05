@@ -44,7 +44,7 @@ void prinfFat32();
 void GotoXY(int x, int y);
 void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
 void readEntries(LPCWSTR  drive, int readPoint);
-void formmingUniStr(unsigned char sector[512], int& startIndex, int maxCount, wstring& fullName);
+void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
 
 class NTFS {
 public:

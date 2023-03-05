@@ -51,11 +51,11 @@ void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], 
 	while (sector[checkValid] == 15)
 	{
 		indexByte = checkValid - 10;
-		formmingUniStr(sector, indexByte, 10, fullName);
+		formmingUniStr(sector, indexByte, 10, fullName,512);
 		indexByte = checkValid - 11 + 14;
-		formmingUniStr(sector, indexByte, 12, fullName);
+		formmingUniStr(sector, indexByte, 12, fullName,512);
 		indexByte = checkValid - 11 + 28;
-		formmingUniStr(sector, indexByte, 4, fullName);
+		formmingUniStr(sector, indexByte, 4, fullName,512);
 		if (checkValid - 32 < 0)
 		{
 			ReadSector(drive, readPoint - 512, sector);
@@ -82,7 +82,7 @@ void readEntries(LPCWSTR  drive, int readPoint)
 		{
 			wstring fullName = L"";
 			wstring fileExtension;
-			if (sector[checkValid - 11] != 0xE5) {
+			if (checkValid - 11 >= 0 && sector[checkValid - 11] != 0xE5) {
 				if (sector[checkValid] == 32)
 				{
 					//File không có entry phụ
@@ -133,8 +133,8 @@ void readEntries(LPCWSTR  drive, int readPoint)
 				}
 
 			}
-			wcout << fullName << endl;
 			checkValid += 32;
+			wcout << fullName << endl;
 		}
 		i++;
 	}

@@ -154,9 +154,9 @@ void drawMenu()
 }
 
 
-void formmingUniStr(unsigned char sector[512], int& startIndex, int maxCount, wstring& fullName) {
+void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead) {
 
-    for (int i = 0; i < maxCount / 2; i++) {
+    for (int i = 0; i < maxCount / 2 && startIndex < limitByteRead; i++) {
         if (sector[startIndex] == 0xff) return;
         wchar_t temp;
         temp = sector[startIndex + 1] << 8;
