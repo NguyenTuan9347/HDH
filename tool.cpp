@@ -3,7 +3,6 @@
 
 
 
-
 unsigned int charToInt(unsigned char* arr, int size) {
     unsigned char* temp = new unsigned char[size];
     unsigned int kq = 0;
@@ -43,7 +42,7 @@ int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512])
 
     if (device == INVALID_HANDLE_VALUE) // Open Error
     {
-        printf("CreateFile: %u\n", GetLastError());
+        wprintf(L"CreateFile: %u\n", GetLastError());
         return 1;
     }
 
@@ -51,11 +50,7 @@ int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512])
 
     if (!ReadFile(device, sector, 512, &bytesRead, NULL))
     {
-        printf("ReadFile: %u\n", GetLastError());
-    }
-    else
-    {
-        printf("Success!\n");
+        wprintf(L"ReadFile: %u\n", GetLastError());
     }
 }
 
@@ -71,94 +66,103 @@ void GotoXY(int x, int y)
 void prinfFat32()
 {
     GotoXY(40, 10);
-    cout << "  ______   _______ ____ ___   " << endl;
+    wcout << "  ______   _______ ____ ___   " << endl;
     GotoXY(40, 11);
-    cout << " |  ____/\\|__   __|___ \\__ \\  " << endl;
+    wcout << " |  ____/\\|__   __|___ \\__ \\  " << endl;
     GotoXY(40, 12);
-    cout << " | |__ /  \\  | |    __) | ) |  " << endl;
+    wcout << " | |__ /  \\  | |    __) | ) |  " << endl;
     GotoXY(40, 13);
-    cout << " |  __/ /\\ \\ | |   |__ < / / " << endl;
+    wcout << " |  __/ /\\ \\ | |   |__ < / / " << endl;
     GotoXY(40, 14);
-    cout << " | | / ____ \\| |   ___) / /_ " << endl;
+    wcout << " | | / ____ \\| |   ___) / /_ " << endl;
     GotoXY(40, 15);
-    cout << " |_|/_/    \\_\\_|  |____/____|" << endl;
+    wcout << " |_|/_/    \\_\\_|  |____/____|" << endl;
 
 }
 void printfNtfs()
 {
     GotoXY(40, 10);
-    cout << "  _   _ _______ ______ _____  " << endl;
+    wcout << "  _   _ _______ ______ _____  " << endl;
     GotoXY(40, 11);
-    cout << " | \\ | |__   __|  ____/ ____| " << endl;
+    wcout << " | \\ | |__   __|  ____/ ____| " << endl;
     GotoXY(40, 12);
-    cout << " |  \\| |  | |  | |__ | (___  " << endl;
+    wcout << " |  \\| |  | |  | |__ | (___  " << endl;
     GotoXY(40, 13);
-    cout << " | . ` |  | |  |  __| \\___ \\ " << endl;
+    wcout << " | . ` |  | |  |  __| \\___ \\ " << endl;
     GotoXY(40, 14);
-    cout << " | |\\  |  | |  | |    ____) |" << endl;
+    wcout << " | |\\  |  | |  | |    ____) |" << endl;
     GotoXY(40, 15);
-    cout << " |_| \\_|  |_|  |_|   |_____/ " << endl;
+    wcout << " |_| \\_|  |_|  |_|   |_____/ " << endl;
 
 }
 void quanlywindow()
 {
     GotoXY(20, 0);
-    cout << "   ____                      _         _                _   _    " << endl;
+    wcout << "   ____                      _         _                _   _    " << endl;
     GotoXY(20, 1);
-    cout << "  / __ \\                    | |       | |              | | (_)      " << endl;
+    wcout << "  / __ \\                    | |       | |              | | (_)      " << endl;
     GotoXY(20, 2);
-    cout << " | |  | |_   _  __ _ _ __   | |_   _  | |_ __ _ _ __   | |_ _ _ __  " << endl;
+    wcout << " | |  | |_   _  __ _ _ __   | |_   _  | |_ __ _ _ __   | |_ _ _ __  " << endl;
     GotoXY(20, 3);
-    cout << " | |  | | | | |/ _` | '_ \\  | | | | | | __/ _` | '_ \\  | __| | '_ \\" << endl;
+    wcout << " | |  | | | | |/ _` | '_ \\  | | | | | | __/ _` | '_ \\  | __| | '_ \\" << endl;
     GotoXY(20, 4);
-    cout << " | |__| | |_| | (_| | | | | | | |_| | | || (_| | |_) | | |_| | | | |" << endl;
+    wcout << " | |__| | |_| | (_| | | | | | | |_| | | || (_| | |_) | | |_| | | | |" << endl;
     GotoXY(20, 5);
-    cout << "  \\___\\_\\\\__,_|\\__,_|_| |_| |_|\\__, |  \\__\\__,_| .__/   \\__|_|_| |_|" << endl;
+    wcout << "  \\___\\_\\\\__,_|\\__,_|_| |_| |_|\\__, |  \\__\\__,_| .__/   \\__|_|_| |_|" << endl;
     GotoXY(20, 6);
-    cout << "                                __/ |          | |                  " << endl;
+    wcout << "                                __/ |          | |                  " << endl;
     GotoXY(20, 7);
-    cout << "                               |___/           |_|                  " << endl;
+    wcout << "                               |___/           |_|                  " << endl;
     GotoXY(20, 10);
-    cout << "  _                             _           _                   " << endl;
+    wcout << "  _                             _           _                   " << endl;
     GotoXY(20, 11);
-    cout << " | |                           (_)         | |                  " << endl;
+    wcout << " | |                           (_)         | |                  " << endl;
     GotoXY(20, 12);
-    cout << " | |_ _ __ ___ _ __   __      ___ _ __   __| | _____      _____ " << endl;
+    wcout << " | |_ _ __ ___ _ __   __      ___ _ __   __| | _____      _____ " << endl;
     GotoXY(20, 13);
-    cout << " | __| '__/ _ \\ '_ \\  \\ \\ /\\ / / | '_ \\ / _` |/ _ \\ \\ /\\ / / __|" << endl;
+    wcout << " | __| '__/ _ \\ '_ \\  \\ \\ /\\ / / | '_ \\ / _` |/ _ \\ \\ /\\ / / __|" << endl;
     GotoXY(20, 14);
-    cout << " | |_| | |  __/ | | |  \\ V  V /| | | | | (_| | (_) \\ V  V /\\__ \\" << endl;
+    wcout << " | |_| | |  __/ | | |  \\ V  V /| | | | | (_| | (_) \\ V  V /\\__ \\" << endl;
     GotoXY(20, 15);
-    cout << "  \\__|_|  \\___|_| |_|   \\_/\\_/ |_|_| |_|\\__,_|\\___/ \\_/\\_/ |___/" << endl;
+    wcout << "  \\__|_|  \\___|_| |_|   \\_/\\_/ |_|_| |_|\\__,_|\\___/ \\_/\\_/ |___/" << endl;
 }
 void drawMenu()
 {
-    unsigned char vborder = 205, hborder = 186, lowerleft = 200, lowerright = 188, upperleft = 201, upperright = 187;
+    wchar_t vborder = 205, hborder = 186, lowerleft = 200, lowerright = 188, upperleft = 201, upperright = 187;
     GotoXY(17 + 25, 19);
     for (int i = 0; i < 26; i++)
-        cout << vborder;
-    GotoXY(16 + 25, 19); cout << upperleft;
-    GotoXY(16 + 25, 20); cout << hborder;
-    GotoXY(16 + 25, 21); cout << hborder;
-    GotoXY(16 + 25, 22); cout << hborder;
-    GotoXY(16 + 25, 23); cout << hborder;
-    GotoXY(16 + 25, 24); cout << hborder;
-    GotoXY(16 + 25, 25); cout << hborder;
-    GotoXY(16 + 25, 26); cout << lowerleft;
+        wcout << vborder;
+    GotoXY(16 + 25, 19); wcout << upperleft;
+    GotoXY(16 + 25, 20); wcout << hborder;
+    GotoXY(16 + 25, 21); wcout << hborder;
+    GotoXY(16 + 25, 22); wcout << hborder;
+    GotoXY(16 + 25, 23); wcout << hborder;
+    GotoXY(16 + 25, 24); wcout << hborder;
+    GotoXY(16 + 25, 25); wcout << hborder;
+    GotoXY(16 + 25, 26); wcout << lowerleft;
     GotoXY(17 + 25, 26);
     for (int i = 0; i < 26; i++)
-        cout << vborder;
-    GotoXY(16 + 27 + 25, 19); cout << upperright;
-    GotoXY(16 + 27 + 25, 20); cout << hborder;
-    GotoXY(16 + 27 + 25, 21); cout << hborder;
-    GotoXY(16 + 27 + 25, 22); cout << hborder;
-    GotoXY(16 + 27 + 25, 23); cout << hborder;
-    GotoXY(16 + 27 + 25, 24); cout << hborder;
-    GotoXY(16 + 27 + 25, 25); cout << hborder;
-    GotoXY(16 + 27 + 25, 26); cout << lowerright;
+        wcout << vborder;
+    GotoXY(16 + 27 + 25, 19); wcout << upperright;
+    GotoXY(16 + 27 + 25, 20); wcout << hborder;
+    GotoXY(16 + 27 + 25, 21); wcout << hborder;
+    GotoXY(16 + 27 + 25, 22); wcout << hborder;
+    GotoXY(16 + 27 + 25, 23); wcout << hborder;
+    GotoXY(16 + 27 + 25, 24); wcout << hborder;
+    GotoXY(16 + 27 + 25, 25); wcout << hborder;
+    GotoXY(16 + 27 + 25, 26); wcout << lowerright;
 }
 
 
+void formmingUniStr(unsigned char sector[512], int& startIndex, int maxCount, wstring& fullName) {
 
-
+    for (int i = 0; i < maxCount / 2; i++) {
+        if (sector[startIndex] == 0xff) return;
+        wchar_t temp;
+        temp = sector[startIndex + 1] << 8;
+        temp |= sector[startIndex] << 0;
+        fullName.push_back(temp);
+        startIndex += 2;
+    }
+}
 

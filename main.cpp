@@ -1,42 +1,48 @@
-#include "HDH.h"
+﻿#include "HDH.h"
+
 
 int main()
 {
+    int dump = _setmode(_fileno(stdout), _O_U16TEXT);
     int menu_item = 0;
     int x = 21;
     bool menu = true;
     FAT32* fat32Disk = NULL;
     NTFS* ntfsDisk = NULL;
+    LPCWSTR* path = NULL;
+    wstring str_turned_to_wstr;
+    wstring temp = L"Xin chào thế giới.txt";
+   
     while (menu)
     {
         quanlywindow();
         drawMenu();
         GotoXY(18 + 25, x);
-        cout << "-> ";
+        wcout << "-> ";
         GotoXY(18 + 20 + 25, x);
-        cout << " <-";
+        wcout << " <-";
         GotoXY(25 + 25, 21);
-        cout << "FAT32";
+        wcout << "FAT32";
         GotoXY(25 + 25, 22);
-        cout << "NTFS";
+        wcout << "NTFS";
         GotoXY(25 + 25, 23);
-        cout << "Exit";
+        wcout << "Exit";
 
         system("pause>nul"); // the >nul bit causes it the print no message
 
         if (GetAsyncKeyState(VK_DOWN) && x != 23) // down button pressed
         {
             GotoXY(18 + 25, x);
-            cout << "  ";
+            wcout << "  ";
             GotoXY(18 + 20 + 25, x);
-            cout << "  ";
+            wcout << "  ";
             GotoXY(18 + 21 + 25, x);
-            cout << "  ";
+            wcout << "  ";
             x++;
             GotoXY(18 + 25, x);
-            cout << "-> ";
+            wcout << "-> ";
             GotoXY(18 + 20 + 25, x);
-            cout << " <-";
+            wcout << " <-";
             menu_item++;
             continue;
         }
@@ -44,16 +50,16 @@ int main()
         if (GetAsyncKeyState(VK_UP) && x != 21) // up button pressed
         {
             GotoXY(18 + 25, x);
-            cout << "  ";
+            wcout << "  ";
             GotoXY(18 + 20 + 25, x);
-            cout << "  ";
+            wcout << "  ";
             GotoXY(18 + 21 + 25, x);
-            cout << "  ";
+            wcout << "  ";
             x--;
             GotoXY(18 + 25, x);
-            cout << "-> ";
+            wcout << "-> ";
             GotoXY(18 + 20 + 25, x);
-            cout << " <-";
+            wcout << " <-";
             menu_item--;
             continue;
         }
@@ -72,31 +78,31 @@ int main()
                     prinfFat32();
                     drawMenu();
                     GotoXY(18 + 25, f32);
-                    cout << "-> ";
+                    wcout << "-> ";
                     GotoXY(18 + 20 + 25, f32);
-                    cout << " <-";
+                    wcout << " <-";
                     GotoXY(25 + 25, 21);
-                    cout << "Doc thong tin ";
+                    wcout << "Doc thong tin ";
                     GotoXY(25 + 25, 22);
-                    cout << "Cay thu muc";
+                    wcout << "Cay thu muc";
                     GotoXY(25 + 25, 23);
-                    cout << "Exit";
+                    wcout << "Exit";
 
                     system("pause>nul"); // the >nul bit causes it the print no message
 
                     if (GetAsyncKeyState(VK_DOWN) && f32 != 23) // down button pressed
                     {
                         GotoXY(18 + 25, f32);
-                        cout << "  ";
+                        wcout << "  ";
                         GotoXY(18 + 20 + 25, f32);
-                        cout << "  ";
+                        wcout << "  ";
                         GotoXY(18 + 21 + 25, f32);
-                        cout << "  ";
+                        wcout << "  ";
                         f32++;
                         GotoXY(18 + 25, f32);
-                        cout << "-> ";
+                        wcout << "-> ";
                         GotoXY(18 + 20 + 25, f32);
-                        cout << " <-";
+                        wcout << " <-";
                         menu_fat32++;
                         continue;
                     }
@@ -104,45 +110,57 @@ int main()
                     if (GetAsyncKeyState(VK_UP) && f32 != 21) // up button pressed
                     {
                         GotoXY(18 + 25, f32);
-                        cout << "  ";
+                        wcout << "  ";
                         GotoXY(18 + 20 + 25, f32);
-                        cout << "  ";
+                        wcout << "  ";
                         GotoXY(18 + 21 + 25, f32);
-                        cout << "  ";
+                        wcout << "  ";
                         f32--;
                         GotoXY(18 + 25, f32);
-                        cout << "-> ";
+                        wcout << "-> ";
                         GotoXY(18 + 20 + 25, f32);
-                        cout << " <-";
+                        wcout << " <-";
                         menu_fat32--;
                         continue;
                     }
                     system("cls");
                     if (GetAsyncKeyState(VK_RETURN))
                     { // Enter key pressed
-                        
+
                         switch (menu_fat32)
                         {
                         case 0:
                         {
-                            cout << "Drive letter of USB?: ";
+                            wcout << "Drive letter of USB?: ";
                             string disk = "\\\\.\\?:";
                             char name;
                             cin >> name;
                             disk[4] = name;
-                            wstring str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
-                            LPCWSTR path = str_turned_to_wstr.c_str();
-                            fat32Disk = readFAT32(path);
+                            str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
+                            path = new LPCWSTR(str_turned_to_wstr.c_str());
+                            
+                            fat32Disk = readFAT32(*path);
+                            
                             system("pause");
                             break;
                         }
 
                         case 1:
                         {
-
+                            if (fat32Disk == NULL || path == NULL) {
+                                wcout << "No data of disk has been found, please try again " << endl;
+                                system("pause");
+                            }
+                            else {   
+                                for (int i = 0; i < temp.size(); i++) {
+                                    wprintf(L" %x ", temp[i]);
+                                }
+                                wcout << endl;
+                                readEntries(*path, fat32Disk->byteStartOfRDET());
+                                wcout << endl;
+                            }
                             break;
                         }
-
                         case 2:
                         {
                             mf32 = false;
@@ -173,47 +191,47 @@ int main()
                     printfNtfs();
                     drawMenu();
                     GotoXY(18 + 25, ntf);
-                    cout << "-> ";
+                    wcout << "-> ";
                     GotoXY(18 + 20 + 25, ntf);
-                    cout << " <-";
+                    wcout << " <-";
                     GotoXY(25 + 25, 21);
-                    cout << "Doc thong tin ";
+                    wcout << "Doc thong tin ";
                     GotoXY(25 + 25, 22);
-                    cout << "Cay thu muc";
+                    wcout << "Cay thu muc";
                     GotoXY(25 + 25, 23);
-                    cout << "Exit";
+                    wcout << "Exit";
 
                     system("pause>nul"); // the >nul bit causes it the print no message
 
                     if (GetAsyncKeyState(VK_DOWN) && ntf != 23) // down button pressed
                     {
                         GotoXY(18 + 25, ntf);
-                        cout << "  ";
+                        wcout << "  ";
                         GotoXY(18 + 20 + 25, ntf);
-                        cout << "  ";
+                        wcout << "  ";
                         GotoXY(18 + 21 + 25, ntf);
-                        cout << "  ";
+                        wcout << "  ";
                         ntf++;
                         GotoXY(18 + 25, ntf);
-                        cout << "-> ";
+                        wcout << "-> ";
                         GotoXY(18 + 20 + 25, ntf);
-                        cout << " <-";
+                        wcout << " <-";
                         menu_ntfs++;
                         continue;
                     }
                     if (GetAsyncKeyState(VK_UP) && ntf != 21) // up button pressed
                     {
                         GotoXY(18 + 25, ntf);
-                        cout << "  ";
+                        wcout << "  ";
                         GotoXY(18 + 20 + 25, ntf);
-                        cout << "  ";
+                        wcout << "  ";
                         GotoXY(18 + 21 + 25, ntf);
-                        cout << "  ";
+                        wcout << "  ";
                         ntf--;
                         GotoXY(18 + 25, ntf);
-                        cout << "-> ";
+                        wcout << "-> ";
                         GotoXY(18 + 20 + 25, ntf);
-                        cout << " <-";
+                        wcout << " <-";
                         menu_ntfs--;
                         continue;
                     }
@@ -224,14 +242,14 @@ int main()
                         {
                         case 0:
                         {
-                            cout << "Drive letter of USB?: ";
+                            wcout << "Drive letter of USB?: ";
                             string disk = "\\\\.\\?:";
                             char name;
                             cin >> name;
                             disk[4] = name;
-                            wstring str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
-                            LPCWSTR path = str_turned_to_wstr.c_str();
-                            ntfsDisk = readNTFS(path);
+                            str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
+                            path = new LPCWSTR(str_turned_to_wstr.c_str());
+                            ntfsDisk = readNTFS(*path);
                             system("pause");
                             break;
                         }
@@ -279,5 +297,8 @@ int main()
     }
     if (ntfsDisk != NULL) delete ntfsDisk;
     if (fat32Disk != NULL) delete fat32Disk;
+    if (path != NULL) delete path;
     return 0;
 }
+
+

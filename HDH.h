@@ -1,12 +1,17 @@
-    #pragma once
+#pragma once
 #include <cstdio>
-#include <windows.h>
+#include <Windows.h>
 #include <iostream>
 #include <vector>
 #include <string>
 #include <vector>
+#include <fcntl.h>
+#include <io.h>
+#include <locale>
 #include <codecvt>
 #include <locale>
+#include <uchar.h>
+#include <memory.h>
 using namespace std;
 
 #define bytePerSectorIndex 11 // size la 2
@@ -37,44 +42,45 @@ void quanlywindow();
 void printfNtfs();
 void prinfFat32();
 void GotoXY(int x, int y);
-
+void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
+void readEntries(LPCWSTR  drive, int readPoint);
+void formmingUniStr(unsigned char sector[512], int& startIndex, int maxCount, wstring& fullName);
 
 class NTFS {
 public:
-    int bpS, SpC, RS, nH, SpT, TotalSec, LCN, LCN_2, CFRS, CIB;
-    NTFS(unsigned char sector[]) {
-        bpS = charToInt(&sector[bytePerSectorIndex], 2);
-        SpC = charToInt(&sector[SectorPerCluster], 1);
-        RS = charToInt(&sector[ReservedSectors], 2);
-        nH = charToInt(&sector[numberOfHead], 2);
-        SpT = charToInt(&sector[SectorPerTrack], 2);//Sectors Per Track
-        TotalSec = charToInt(&sector[TotalSectors], 8);
-        LCN = charToInt(&sector[LogicalClusterNumber], 8);//Logical Cluster Number for the file $MFT 
-        LCN_2 = charToInt(&sector[LogicalClusterNumberforthefile$MFTMirr], 8);//Logical Cluster Number for the file $MFTMirr 
-        CFRS = charToInt(&sector[ClustersPerFileRecordSegment], 4);//Clusters Per File Record Segment
-        CIB = charToInt(&sector[ClustersPerIndexBuffer], 1);//Clusters Per Index Buffer
-    }
+	int bpS, SpC, RS, nH, SpT, TotalSec, LCN, LCN_2, CFRS, CIB;
+	NTFS(unsigned char sector[]) {
+		bpS = charToInt(&sector[bytePerSectorIndex], 2);
+		SpC = charToInt(&sector[SectorPerCluster], 1);
+		RS = charToInt(&sector[ReservedSectors], 2);
+		nH = charToInt(&sector[numberOfHead], 2);
+		SpT = charToInt(&sector[SectorPerTrack], 2);//Sectors Per Track
+		TotalSec = charToInt(&sector[TotalSectors], 8);
+		LCN = charToInt(&sector[LogicalClusterNumber], 8);//Logical Cluster Number for the file $MFT 
+		LCN_2 = charToInt(&sector[LogicalClusterNumberforthefile$MFTMirr], 8);//Logical Cluster Number for the file $MFTMirr 
+		CFRS = charToInt(&sector[ClustersPerFileRecordSegment], 4);//Clusters Per File Record Segment
+		CIB = charToInt(&sector[ClustersPerIndexBuffer], 1);//Clusters Per Index Buffer
+	}
 };
 
 class FAT32 {
 public:
-    int Sf, Sb, Sc, nF, clusterRDETFirstIndex, bytePerSector, Sv, nH;
-    FAT32(unsigned char sector[]) {
-        bytePerSector = charToInt(&sector[bytePerSectorIndex], 2);
-        Sc = charToInt(&sector[ScIndex], 1);
-        Sb = charToInt(&sector[SbIndex], 2);
-        nF = charToInt(&sector[nFIndex], 1);
-        nH = charToInt(&sector[numberOfHeadIndex], 2);
-        Sv = charToInt(&sector[SvIndex], 4);
-        Sf = charToInt(&sector[SfIndex], 4);
-        clusterRDETFirstIndex = charToInt(&sector[RDETstartIndex], 4);
-    }
-    int byteStartOfRDET() {
-        return (nF * Sf + Sb) * bytePerSector;
-    }
+	int Sf, Sb, Sc, nF, clusterRDETFirstIndex, bytePerSector, Sv, nH;
+	FAT32(unsigned char sector[]) {
+		bytePerSector = charToInt(&sector[bytePerSectorIndex], 2);
+		Sc = charToInt(&sector[ScIndex], 1);
+		Sb = charToInt(&sector[SbIndex], 2);
+		nF = charToInt(&sector[nFIndex], 1);
+		nH = charToInt(&sector[numberOfHeadIndex], 2);
+		Sv = charToInt(&sector[SvIndex], 4);
+		Sf = charToInt(&sector[SfIndex], 4);
+		clusterRDETFirstIndex = charToInt(&sector[RDETstartIndex], 4);
+	}
+	int byteStartOfRDET() {
+		return (nF * Sf + Sb) * bytePerSector;
+	}
 
 };
-
 NTFS* readNTFS(LPCWSTR path);
 FAT32* readFAT32(LPCWSTR path);
 class Component
@@ -84,7 +90,6 @@ protected:
 	string name, extension;
 	long size = 0;
 public:
-	Component() {};
 	virtual string getName() = 0;
 	virtual string getExtension() = 0;
 	virtual long getSize() = 0;
@@ -132,6 +137,7 @@ public:
 class File : public Component
 {
 public:
+	File(string namePara, string extensionPara) { name = namePara; extension = extensionPara; }
 	string getName() { return name; }
 	string getExtension() { return extension; }
 	void setSize(int value)
@@ -143,3 +149,4 @@ public:
 		return size;
 	}
 };
+
