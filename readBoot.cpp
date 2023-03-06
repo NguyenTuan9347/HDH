@@ -42,9 +42,19 @@ FAT32* readFAT32(LPCWSTR path) {
 
 void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName)
 {
-	fullName.erase(fullName.begin(), fullName.end());
 	int indexByte = 0;
-	checkValid -= 32;
+	if (checkValid - 32 < 0)
+	{
+		ReadSector(drive, readPoint - 512, sector, 512);
+		checkValid = 491;
+	}
+	else
+	{
+		checkValid -= 32;
+	}
+
+	if (sector[checkValid] == 15) fullName.erase(fullName.begin(), fullName.end());
+	else return;
 	while (sector[checkValid] == 15) {
 		indexByte = checkValid - 10;
 		formmingUniStr(sector, indexByte, 10, fullName,512);
@@ -52,7 +62,6 @@ void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], 
 		formmingUniStr(sector, indexByte, 12, fullName,512);
 		indexByte = checkValid - 11 + 28;
 		formmingUniStr(sector, indexByte, 4, fullName,512);
-		
 		if (checkValid - 32 < 0)
 		{
 			ReadSector(drive, readPoint - 512, sector,512);
@@ -81,7 +90,7 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 			if (checkValid - 11 >= 0 && sector[checkValid - 11] != 0xE5) {
 				int originPoin = checkValid - 11;
 				if (sector[checkValid] == 32) {
-					//File không có entry phụ
+					//Lấy info cluster bắt đầu
 					size = charToInt(&sector[originPoin + 28], 4);
 					clusterStarted = sector[originPoin + 20] << 16;
 					clusterStarted |= sector[originPoin + 21] << 24;
@@ -100,18 +109,14 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 						fullName.push_back((wchar_t)sector[indexByte]);
 						indexByte++;
 					}
-					//Kiểm tra file có entry phụ nằm ở sector khác
-					//Trường hợp có entry phụ
-					if (checkValid - 32 >= 0 && (sector[checkValid - 32] == 15))
-					{
-						//fullName.erase();
-						handleFakeEntries(drive, readPoint, sector, checkValid, fullName);
-					}
+					//Xử lý tồn tại entry phụ (hoặc không)
+					handleFakeEntries(drive, readPoint, sector, checkValid, fullName);
 					File* newFile = new File(fullName, size, clusterStarted);
 					root->AddComponent(newFile);
 				}
 				else if (sector[checkValid] == 16 && sector[checkValid - 11] != 0x2E) {
 					indexByte = checkValid - 11;
+					//Lấy cluster bắt đầu
 					size = charToInt(&sector[originPoin + 28], 4);
 					clusterStarted = sector[originPoin + 20] << 16;
 					clusterStarted |= sector[originPoin + 21] << 24;
@@ -129,12 +134,9 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 						fullName.push_back((wchar_t)sector[indexByte]);
 						indexByte++;
 					}
-					//Trường hợp có entry phụ
-					if (checkValid - 32 >= 0 && (sector[checkValid - 32] == 15) )
-					{
-						//fullName.erase();
-						handleFakeEntries(drive, readPoint, sector, checkValid, fullName);
-					}
+					//Xử lý tồn tại entry phụ (hoặc không)
+					handleFakeEntries(drive, readPoint, sector, checkValid, fullName);
+
 					Folder* newFolder = new Folder(fullName, size, clusterStarted, root);
 					vector<unsigned int> SDET = currDisk->readFAT(clusterStarted, drive);
 					for (int i = 0; i < SDET.size(); i++) {
