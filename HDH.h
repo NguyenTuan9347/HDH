@@ -36,8 +36,8 @@ using namespace std;
 #define sectorEmptyClusterIndex 48 // size 2
 #define sectorBackUpBSIndex 50 // size 2    
 
-unsigned int charToInt(unsigned char* arr, int size);
-int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[],unsigned int numberOfBytes);
+unsigned long charToInt(unsigned char* arr, int size);
+int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[], unsigned int numberOfBytes);
 class NTFS {
 public:
 	int bpS, SpC, RS, nH, SpT, TotalSec, LCN, LCN_2, CFRS, CIB;
@@ -74,24 +74,25 @@ public:
 		return Sb * bytePerSector;
 	}
 	unsigned int clusterToByte(unsigned int cluster) {
-		return (Sb + Sf * nF + (cluster - 2) *Sc)*bytePerSector;
+		return (Sb + Sf * nF + (cluster - 2) * Sc) * bytePerSector;
 	}
 	vector<unsigned int> readFAT(int startedCluster, LPCWSTR path) {
-		unsigned char* sector = new unsigned char[bytePerSector*Sf];
+		unsigned char* sector = new unsigned char[bytePerSector * Sf];
 		vector<unsigned int> kq;
 		this->byteStartOfFAT();
-		ReadSector(path, this->byteStartOfFAT(), sector,Sf*bytePerSector);
-		int i = startedCluster*4 - 4;
+		ReadSector(path, this->byteStartOfFAT(), sector, Sf * bytePerSector);
+		int i = startedCluster * 4 - 4;
 		kq.push_back(startedCluster);
 		for (; i < Sf * bytePerSector;) {
 			unsigned int temp = charToInt(&sector[i], 4);
 			if (temp == 0x0FFFFFFF || temp == 0 || temp == 0xFFFFFFFF) {
 				break;
-			}else if (temp == 0xFFFFFF7){
+			}
+			else if (temp == 0xFFFFFF7) {
 				wcout << L"Corrupt file !!! " << endl;
 			}
-			i = temp*4 - 4;
-			kq.push_back((i -4 )/4);
+			i = temp * 4 - 4;
+			kq.push_back((i - 4) / 4);
 		}
 		return kq;
 	}
@@ -108,7 +109,7 @@ public:
 	virtual wstring getName() = 0;
 	virtual long getSize() = 0;
 	Component(wstring fullName, long size, int clusterIndex) {
-		
+
 		this->size = size;
 		dataIndex = clusterIndex;
 		wcout << fullName << " has been created " << endl;
@@ -131,7 +132,7 @@ class Folder : public Component {
 	vector<Component*> components;
 	int id_Folder;
 public:
-	Folder(wstring fullName, long size, int startIndexData, Component* parent, int id_folder = -1) : Component(fullName,size,startIndexData) {
+	Folder(wstring fullName, long size, int startIndexData, Component* parent, int id_folder = -1) : Component(fullName, size, startIndexData) {
 		copy(fullName.begin(), fullName.end(), back_inserter(name));
 		my_parent = parent;
 		id_Folder = id_folder;
@@ -152,8 +153,8 @@ public:
 		wcout << this->getName() << "     " << L"DIR" << "     " << endl;
 		padding += 5;
 		for (int i = 0; i < components.size(); ++i) {
-			
-			 components[i]->displayContent(padding);
+
+			components[i]->displayContent(padding);
 		}
 	}
 	long getSize() {
@@ -165,7 +166,7 @@ public:
 	}
 	void AddComponent(Component* obj)
 	{
-		if (obj != NULL && isDulpicate(obj->getName()) == false){
+		if (obj != NULL && isDulpicate(obj->getName()) == false) {
 			components.push_back(obj);
 		}
 	}
@@ -183,7 +184,7 @@ class File : public Component
 private:
 	wstring extension;
 public:
-	File(wstring fullName, long size, int clusterIndex) : Component(fullName,size,clusterIndex) {
+	File(wstring fullName, long size, int clusterIndex) : Component(fullName, size, clusterIndex) {
 		int flag = 0;
 		for (int i = 0; i < fullName.size(); i++) {
 			if (fullName[i] == 0x002E && flag == 0) {
@@ -199,9 +200,12 @@ public:
 	}
 	wstring getName() { return name + extension; }
 	void displayContent(int padding) {
-		wcout << setw(padding+ name.size()) << name << extension << "     " << L"FILE" << "     "  << size << endl;
+		wcout << setw(padding + name.size()) << name << extension << "     " << L"FILE" << "     " << size << endl;
 	}
-	wstring getExtension() { return extension; }
+	wstring getExtension() 
+	{
+		return extension; 
+	}
 	void setSize(int value)
 	{
 		size = value;
@@ -225,5 +229,3 @@ NTFS* readNTFS(LPCWSTR path);
 
 FAT32* readFAT32(LPCWSTR path);
 
-
-// tim ten trong folder;

@@ -43,6 +43,7 @@ FAT32* readFAT32(LPCWSTR path) {
 void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName)
 {
 	int indexByte = 0;
+	wcout << readPoint << endl;
 	if (checkValid - 32 < 0)
 	{
 		ReadSector(drive, readPoint - 512, sector, 512);
@@ -52,10 +53,11 @@ void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], 
 	{
 		checkValid -= 32;
 	}
-
-	if (sector[checkValid] == 15) fullName.erase(fullName.begin(), fullName.end());
+	if (sector[checkValid] == 15) 
+		fullName.erase(fullName.begin(), fullName.end());
 	else return;
 	while (sector[checkValid] == 15) {
+		wcout << checkValid << endl;
 		indexByte = checkValid - 10;
 		formmingUniStr(sector, indexByte, 10, fullName,512);
 		indexByte = checkValid - 11 + 14;
@@ -64,8 +66,14 @@ void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], 
 		formmingUniStr(sector, indexByte, 4, fullName,512);
 		if (checkValid - 32 < 0)
 		{
-			ReadSector(drive, readPoint - 512, sector,512);
+			wcout << readPoint << endl;
+			readPoint -= 512;
+			ReadSector(drive, readPoint, sector,512);
 			checkValid = 491;
+			for (int i = 0; i < 512; i++) {
+				if (i != 0 && i % 16 == 0) wcout << endl;
+				wcout << hex << sector[i] << " ";
+			}
 		}
 		else checkValid -= 32;
 	}
@@ -78,7 +86,8 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 	int i = 0;
 	while(1) {
 		unsigned char sector[512];
-		ReadSector(drive, readPoint+ (i * 512), sector,512);
+		readPoint += (i * 512);
+		ReadSector(drive,readPoint , sector,512);
 		if (sector[0] == 0x00) break;
 		int checkValid = 11; //Kiểm tra có phải là file, folder hay Read-Only không
 		int indexByte = 0;
@@ -156,4 +165,9 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 		}
 		i++;
 	}
+}
+
+void readContent()
+{
+
 }
