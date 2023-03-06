@@ -166,6 +166,25 @@ public:
 };
 class MFT {
     Component Directory();
+    bool check_file(wstring a) {
+        for (int i = a.length(); i > 0; i--)
+            if (a[i] == '.')
+            {
+                return true;
+                break;
+            }
+        return false;
+    }
+    bool resident_content_check(unsigned char sector[], int id) {
+        if (sector[id] == 0)
+            return 1;
+        return 0;
+    }
+    void Read_half_byte(unsigned char sector[], int id, int len, int& a, int& b) {
+        int number = charToInt(&sector[id], len);
+        b = number % 16;
+        a = (number - b) / 16;
+    }
 public:
     MFT() {};
     MFT(LPCWSTR path) {
@@ -175,49 +194,75 @@ public:
             //check null entry
             if(charToInt(&entry[0], 1)==0)
                 break;
-#define $FILE_NAME 152
-#define Length_name_index $FILE_NAME+88
-            int Name_index = $FILE_NAME + 90;
+            //---------------------------------------------------GET NAME
+#define $FILE_NAME_Atribute_ID 152
+#define Length_name_ID $FILE_NAME_Atribute_ID+88
+            int Name_index = $FILE_NAME_Atribute_ID + 90;
             //Unicode 2 byte each character
-            int Byte_of_Name_length = 2*charToInt(&entry[Length_name_index], 1);
+            int Byte_of_Name_length = 2*charToInt(&entry[Length_name_ID], 1);
             wstring name;
-            bool check_file = false;
             formmingUniStr(entry, Name_index, Byte_of_Name_length, name, 1024);
-            for(int i=name.length(); i>0; i--)
-                if (name[i] == '.')
-                {
-                    check_file = true;
-                    break;
-                }
-
-            wcout << name <<endl;
+            wcout << name << endl;
+            //--------------------------------------------------CHECK FILE OR FOLDER
+            bool check_file = this->check_file(name);
             if (check_file) {
                 wcout << "File" << endl;
             }
             else
                 wcout << "Folder" << endl;
+            //--------------------------------------------------GET FILE SIZE AND CONTENT
+            //Find $DATA_Atribute_ID
             //16*5+8  + lenght_name_index + Byte_of_Name_length
-            int $file_name_length = 16 * 5 + 8 + 2 + Byte_of_Name_length;
-            int $OBJECT_ID = $FILE_NAME + $file_name_length;
-
-            //find $OBJECT_ID_INDEX
-            while (charToInt(&entry[$OBJECT_ID], 1) != 128)
-                $OBJECT_ID++;
-
-            //Size_data_index
-            int Size_Data_index = $OBJECT_ID + 16;
-            int Byte_length_content = charToInt(&entry[Size_Data_index], 4);
-            wcout << Byte_length_content << " Bytes" << endl;
-            //printf(" %4x ", entry[Size_Data_index]);
-
-            int Start_content_index = $OBJECT_ID + charToInt(&entry[$OBJECT_ID + 20], 2);
-            wstring content;
-            //formmingUniStr(entry, Start_content_index, Byte_length_content, content, 1024);
-            //for (int i = 0; i < Byte_length_content; i++)
-            //    content += char(charToInt(&entry[Start_content_index + i], 1));
-            //wcout << content << endl;
-            wcout << endl;
+            int $FILE_NAME_Atribute_length = 16 * 5 + 8 + 2 + Byte_of_Name_length;
+            int $DATA_Atribute_ID = $FILE_NAME_Atribute_ID + $FILE_NAME_Atribute_length;
+            while (charToInt(&entry[$DATA_Atribute_ID], 1) != 128)
+                $DATA_Atribute_ID++;
             
+            //----------------
+            int resident_content_id = $DATA_Atribute_ID + 8;
+            bool  check_resident=resident_content_check(entry, resident_content_id);
+            //wcout << check_resident << endl;
+            if (check_resident) {
+                //--------------SIZE DATA
+                int Size_Data_ID = $DATA_Atribute_ID + 16;
+                int Byte_length_content = charToInt(&entry[Size_Data_ID], 4);
+                wcout << Byte_length_content << " Bytes" << endl;
+
+                int Start_content_index = $DATA_Atribute_ID + charToInt(&entry[$DATA_Atribute_ID + 20], 2);
+                wstring content;
+                //formmingUniStr(entry, Start_content_index, Byte_length_content, content, 1024);
+                for (int i = 0; i < Byte_length_content; i++)
+                    content += char(charToInt(&entry[Start_content_index + i], 1));
+                wcout << content << endl;
+            }
+            else {
+                if (check_file) {
+                    int Size_Data_ID = $DATA_Atribute_ID + charToInt(&entry[$DATA_Atribute_ID + 32], 2);
+                    int left_byte, right_byte;
+                    this->Read_half_byte(entry, Size_Data_ID, 1, left_byte, right_byte);
+                    int number_cluster_content_size = charToInt(&entry[Size_Data_ID + 1], left_byte);
+                    wcout << number_cluster_content_size << endl;
+                    //--------------Size
+                    int Byte_length_content = 512 * 8 * charToInt(&entry[Size_Data_ID+1], left_byte);
+                    wcout << Byte_length_content << " Bytes" << endl;
+
+                    //-------------------------Tackle content
+                    int cluster_in_offset = charToInt(&entry[Size_Data_ID + 1 + left_byte], right_byte);
+                    wcout << cluster_in_offset << endl;
+                    
+                    //for (int i = 0; i < i + 1; i++) {
+                    //    ReadSector(path, cluster_in_offset*512*8 + i * 1024, entry, 1024);
+                    //    //check null entry
+                    //    if (charToInt(&entry[0], 1) == 0)
+                    //        break;
+
+                    //printf(" %4x ", entry[Size_Data_ID]);
+                    //wcout << std::hex<<charToInt(&entry[Size_Data_ID], 1) << endl;
+                    //int Byte_length_content = charToInt(&entry[Size_Data_ID], 4);
+                    //wcout << Byte_length_content << " Bytes" << endl;
+                }
+            }
+            wcout << endl;
         }
 #define $DATA 
     }
