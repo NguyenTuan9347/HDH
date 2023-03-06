@@ -111,6 +111,7 @@ public:
 		
 		this->size = size;
 		dataIndex = clusterIndex;
+		wcout << fullName << " has been created " << endl;
 	}
 	virtual void AddComponent(Component* obj)
 	{
@@ -138,7 +139,6 @@ public:
 	wstring getName() { return name; }
 
 	bool isDulpicate(wstring wantedName) {
-		if (wantedName == name)	return true;
 		for (int i = 0; i < components.size(); i++) {
 			if (components[i]->getName() == wantedName) {
 				return true;
@@ -148,11 +148,12 @@ public:
 	}
 
 	void displayContent(int padding) {
-		wcout << this->getName() << "            " << L"DIR" << "            " << endl;
-		padding += 10;
+		wcout << setw(padding + this->getName().size());
+		wcout << this->getName() << "     " << L"DIR" << "     " << endl;
+		padding += 5;
 		for (int i = 0; i < components.size(); ++i) {
 			
-			wcout << setw(padding); components[i]->displayContent(padding);
+			 components[i]->displayContent(padding);
 		}
 	}
 	long getSize() {
@@ -193,11 +194,12 @@ public:
 			}
 			else {
 				extension.push_back(fullName[i]);
-		
+			}
+		}
 	}
 	wstring getName() { return name + extension; }
 	void displayContent(int padding) {
-		wcout << name << extension << "            " << L"FILE" << "            " << size << endl;
+		wcout << setw(padding+ name.size()) << name << extension << "     " << L"FILE" << "     "  << size << endl;
 	}
 	wstring getExtension() { return extension; }
 	void setSize(int value)
