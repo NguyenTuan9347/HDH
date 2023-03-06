@@ -12,6 +12,7 @@
 #include <locale>
 #include <uchar.h>
 #include <memory.h>
+#include <iomanip>
 using namespace std;
 
 #define bytePerSectorIndex 11 // size la 2
@@ -35,17 +36,8 @@ using namespace std;
 #define sectorEmptyClusterIndex 48 // size 2
 #define sectorBackUpBSIndex 50 // size 2    
 
-unsigned int charToInt(unsigned char* arr, int size);
-int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512]);
-void drawMenu();
-void quanlywindow();
-void printfNtfs();
-void prinfFat32();
-void GotoXY(int x, int y);
-void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
-void readEntries(LPCWSTR  drive, int readPoint);
-void formmingUniStr(unsigned char sector[512], int& startIndex, int maxCount, wstring& fullName);
-
+unsigned long charToInt(unsigned char* arr, int size);
+int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[], unsigned int numberOfBytes);
 class NTFS {
 public:
 	int bpS, SpC, RS, nH, SpT, TotalSec, LCN, LCN_2, CFRS, CIB;
@@ -62,7 +54,6 @@ public:
 		CIB = charToInt(&sector[ClustersPerIndexBuffer], 1);//Clusters Per Index Buffer
 	}
 };
-
 class FAT32 {
 public:
 	int Sf, Sb, Sc, nF, clusterRDETFirstIndex, bytePerSector, Sv, nH;
@@ -79,38 +70,102 @@ public:
 	int byteStartOfRDET() {
 		return (nF * Sf + Sb) * bytePerSector;
 	}
-
+	int byteStartOfFAT() {
+		return Sb * bytePerSector;
+	}
+	unsigned int clusterToByte(unsigned int cluster) {
+		return (Sb + Sf * nF + (cluster - 2) * Sc) * bytePerSector;
+	}
+	vector<unsigned int> readFAT(int startedCluster, LPCWSTR path) {
+		unsigned char* sector = new unsigned char[bytePerSector * Sf];
+		vector<unsigned int> kq;
+		this->byteStartOfFAT();
+		ReadSector(path, this->byteStartOfFAT(), sector, Sf * bytePerSector);
+		int i = startedCluster * 4 - 4;
+		kq.push_back(startedCluster);
+		for (; i < Sf * bytePerSector;) {
+			unsigned int temp = charToInt(&sector[i], 4);
+			if (temp == 0x0FFFFFFF || temp == 0 || temp == 0xFFFFFFFF) {
+				break;
+			}
+			else if (temp == 0xFFFFFF7) {
+				wcout << L"Corrupt file !!! " << endl;
+			}
+			i = temp * 4 - 4;
+			kq.push_back((i - 4) / 4);
+		}
+		return kq;
+	}
 };
-NTFS* readNTFS(LPCWSTR path);
-FAT32* readFAT32(LPCWSTR path);
+
+
 class Component
 {
 protected:
-	Component* parent = nullptr;
-	string name, extension;
+	wstring name;
+	unsigned int dataIndex;
 	long size = 0;
 public:
-	virtual string getName() = 0;
-	virtual string getExtension() = 0;
+	virtual wstring getName() = 0;
 	virtual long getSize() = 0;
+	unsigned int getStartingCluster() { return dataIndex; }
+	Component(wstring fullName, long size, int clusterIndex) {
+
+		this->size = size;
+		dataIndex = clusterIndex;
+		//wcout << fullName << " has been created " << endl;
+	}
+	virtual Component* findMe(wstring myName) = 0;
 	virtual void AddComponent(Component* obj)
 	{
 
 	}
+	virtual void displayContent(int padding) = 0;
 	virtual void RemoveComponent(Component* obj)
 	{
 
 	}
 	virtual ~Component() {
-		if (parent != nullptr) delete parent;
 	}
 };
-class Folder : public Component
-{
+
+class Folder : public Component {
+	Component* my_parent = nullptr;
 	vector<Component*> components;
+	int id_Folder;
 public:
-	string getName() { return name; }
-	string getExtension() { return ""; }
+	Folder(wstring fullName, long size, int startIndexData, Component* parent, int id_folder = -1) : Component(fullName, size, startIndexData) {
+		copy(fullName.begin(), fullName.end(), back_inserter(name));
+		my_parent = parent;
+		id_Folder = id_folder;
+	}
+	wstring getName() { return name; }
+	
+	bool isDulpicate(wstring wantedName) {
+		for (int i = 0; i < components.size(); i++) {
+			if (components[i]->getName() == wantedName) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void displayContent(int padding) {
+		wcout << setw(padding + this->getName().size());
+		wcout << this->getName() << "     " << L"DIR" << "     " << endl;
+		padding += 5;
+		for (int i = 0; i < components.size(); ++i) {
+
+			components[i]->displayContent(padding);
+		}
+	}
+	Component* findMe(wstring myName) {
+		if (name == myName) return this;
+		for (int i = 0; i < components.size(); i++) {
+			if (components[i]->getName() == myName) return components[i];
+		}
+		return NULL;
+	}
 	long getSize() {
 		for (int i = 0; i < components.size(); ++i)
 		{
@@ -120,8 +175,7 @@ public:
 	}
 	void AddComponent(Component* obj)
 	{
-		if (obj != NULL)
-		{
+		if (obj != NULL && isDulpicate(obj->getName()) == false) {
 			components.push_back(obj);
 		}
 	}
@@ -136,10 +190,44 @@ public:
 };
 class File : public Component
 {
+private:
+	wstring extension;
 public:
-	File(string namePara, string extensionPara) { name = namePara; extension = extensionPara; }
-	string getName() { return name; }
-	string getExtension() { return extension; }
+	File(wstring fullName, long size, int clusterIndex) : Component(fullName, size, clusterIndex) {
+		int flag = 0;
+		for (int i = 0; i < fullName.size(); i++) {
+			if (fullName[i] == 0x002E && flag == 0) {
+				flag++;
+			}
+			if (flag == 0) {
+				name.push_back(fullName[i]);
+			}
+			else {
+				extension.push_back(fullName[i]);
+			}
+		}
+	}
+	Component* findMe(wstring myName) {
+		if (myName == (name + extension)) {
+			return this;
+		}
+		else {
+			return NULL;
+		}
+	}
+	wstring getName() { return name + extension; }
+	void displayContent(int padding) {
+		wcout << setw(padding + name.size()) << name << extension << "     " << L"FILE" << "     " << size << endl;
+	}
+	
+	wstring getExtension() 
+	{
+		return extension; 
+	}
+	unsigned int getStartingCluster()
+	{
+		return dataIndex;
+	}
 	void setSize(int value)
 	{
 		size = value;
@@ -149,4 +237,18 @@ public:
 		return size;
 	}
 };
+
+
+void drawMenu();
+void quanlywindow();
+void printfNtfs();
+void prinfFat32();
+void GotoXY(int x, int y);
+void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
+void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk);
+void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
+wstring readContent(Component* obj, FAT32* disk, LPCWSTR drive);
+NTFS* readNTFS(LPCWSTR path);
+FAT32* readFAT32(LPCWSTR path);
+
 
