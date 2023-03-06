@@ -166,15 +166,6 @@ public:
 };
 class MFT {
     Component Directory();
-    bool check_file(wstring a) {
-        for (int i = a.length(); i > 0; i--)
-            if (a[i] == '.')
-            {
-                return true;
-                break;
-            }
-        return false;
-    }
     bool resident_content_check(unsigned char sector[], int id) {
         if (sector[id] == 0)
             return 1;
@@ -185,6 +176,16 @@ class MFT {
         b = number % 16;
         a = (number - b) / 16;
     }
+    bool check_active_or_deleted(unsigned char sector[],bool &check_file) {
+        if (sector[22] == 1)
+        {
+            check_file = true;
+            return 1;
+        }
+        if (sector[22] == 3)
+            return 1;
+        return 0;
+    }
 public:
     MFT() {};
     MFT(LPCWSTR path) {
@@ -194,6 +195,15 @@ public:
             //check null entry
             if(charToInt(&entry[0], 1)==0)
                 break;
+            
+            //-----------------------------------------CHECK FILE OR FOLDER----------CHECK ACTIVE OR DELETED
+            bool check_file = false;
+            wcout << check_active_or_deleted(entry,check_file) << endl;
+            if (check_file) {
+                wcout << "File" << endl;
+            }
+            else
+                wcout << "Folder" << endl;
             //---------------------------------------------------GET NAME
 #define $FILE_NAME_Atribute_ID 152
 #define Length_name_ID $FILE_NAME_Atribute_ID+88
@@ -203,13 +213,6 @@ public:
             wstring name;
             formmingUniStr(entry, Name_index, Byte_of_Name_length, name, 1024);
             wcout << name << endl;
-            //--------------------------------------------------CHECK FILE OR FOLDER
-            bool check_file = this->check_file(name);
-            if (check_file) {
-                wcout << "File" << endl;
-            }
-            else
-                wcout << "Folder" << endl;
             //--------------------------------------------------GET FILE SIZE AND CONTENT
             //Find $DATA_Atribute_ID
             //16*5+8  + lenght_name_index + Byte_of_Name_length
