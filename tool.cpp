@@ -26,7 +26,7 @@ unsigned int charToInt(unsigned char* arr, int size) {
 }
 
 
-int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512])
+int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[],unsigned int numberOfBytes)
 {
     int retCode = 0;
     DWORD bytesRead;
@@ -48,7 +48,7 @@ int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512])
 
     SetFilePointer(device, readPoint, NULL, FILE_BEGIN);//Set a Point to Read
 
-    if (!ReadFile(device, sector, 512, &bytesRead, NULL))
+    if (!ReadFile(device, sector, numberOfBytes, &bytesRead, NULL))
     {
         wprintf(L"ReadFile: %u\n", GetLastError());
     }
@@ -156,11 +156,12 @@ void drawMenu()
 
 void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead) {
 
-    for (int i = 0; i < maxCount / 2 && startIndex < limitByteRead; i++) {
-        if (sector[startIndex] == 0xff) return;
+    for (int i = 0; i < (maxCount +1)/ 2 && startIndex < limitByteRead; i++) {
+        if (sector[startIndex] == 0xff || sector[startIndex] == 0x00) return;
         wchar_t temp;
         temp = sector[startIndex + 1] << 8;
         temp |= sector[startIndex] << 0;
+        if (temp == 0x0000) break;
         fullName.push_back(temp);
         startIndex += 2;
     }

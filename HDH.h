@@ -12,6 +12,7 @@
 #include <locale>
 #include <uchar.h>
 #include <memory.h>
+#include <iomanip>
 using namespace std;
 
 #define bytePerSectorIndex 11 // size la 2
@@ -36,7 +37,7 @@ using namespace std;
 #define sectorBackUpBSIndex 50 // size 2    
 
 unsigned int charToInt(unsigned char* arr, int size);
-
+int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[],unsigned int numberOfBytes);
 class NTFS {
 public:
 	int bpS, SpC, RS, nH, SpT, TotalSec, LCN, LCN_2, CFRS, CIB;
@@ -53,7 +54,6 @@ public:
 		CIB = charToInt(&sector[ClustersPerIndexBuffer], 1);//Clusters Per Index Buffer
 	}
 };
-
 class FAT32 {
 public:
 	int Sf, Sb, Sc, nF, clusterRDETFirstIndex, bytePerSector, Sv, nH;
@@ -70,31 +70,45 @@ public:
 	int byteStartOfRDET() {
 		return (nF * Sf + Sb) * bytePerSector;
 	}
-
+	int byteStartOfFAT() {
+		return Sb * bytePerSector;
+	}
+	unsigned int clusterToByte(unsigned int cluster) {
+		return (Sb + Sf * nF + (cluster - 2) *Sc)*bytePerSector;
+	}
+	vector<unsigned int> readFAT(int startedCluster, LPCWSTR path) {
+		unsigned char* sector = new unsigned char[bytePerSector*Sf];
+		vector<unsigned int> kq;
+		this->byteStartOfFAT();
+		ReadSector(path, this->byteStartOfFAT(), sector,Sf*bytePerSector);
+		int i = startedCluster*4 - 4;
+		kq.push_back(startedCluster);
+		for (; i < Sf * bytePerSector;) {
+			unsigned int temp = charToInt(&sector[i], 4);
+			if (temp == 0x0FFFFFFF || temp == 0 || temp == 0xFFFFFFFF) {
+				break;
+			}else if (temp == 0xFFFFFF7){
+				wcout << L"Corrupt file !!! " << endl;
+			}
+			i = temp*4 - 4;
+			kq.push_back((i -4 )/4);
+		}
+		return kq;
+	}
 };
-NTFS* readNTFS(LPCWSTR path);
-FAT32* readFAT32(LPCWSTR path);
+
+
 class Component
 {
 protected:
-	wstring name, extension;
+	wstring name;
 	unsigned int dataIndex;
 	long size = 0;
 public:
 	virtual wstring getName() = 0;
-	virtual wstring getExtension() = 0;
 	virtual long getSize() = 0;
 	Component(wstring fullName, long size, int clusterIndex) {
-		int flag = 0;
-		for (int i = 0; i < fullName.size(); i++) {
-			if (fullName[i] == L'.' && flag == 0) flag++;
-			if (flag == 0) {
-				name.push_back(fullName[i]);
-			}
-			else {
-				extension.push_back(fullName[i]);
-			}
-		}
+		
 		this->size = size;
 		dataIndex = clusterIndex;
 	}
@@ -102,6 +116,7 @@ public:
 	{
 
 	}
+	virtual void displayContent(int padding) = 0;
 	virtual void RemoveComponent(Component* obj)
 	{
 
@@ -115,11 +130,31 @@ class Folder : public Component {
 	vector<Component*> components;
 	int id_Folder;
 public:
-	Folder(wstring fullName, long size, int startIndexData, Component* parent) : Component(fullName,size,startIndexData) {
+	Folder(wstring fullName, long size, int startIndexData, Component* parent, int id_folder = -1) : Component(fullName,size,startIndexData) {
+		copy(fullName.begin(), fullName.end(), back_inserter(name));
 		my_parent = parent;
+		id_Folder = id_folder;
 	}
 	wstring getName() { return name; }
-	wstring getExtension() { return extension; }
+
+	bool isDulpicate(wstring wantedName) {
+		if (wantedName == name)	return true;
+		for (int i = 0; i < components.size(); i++) {
+			if (components[i]->getName() == wantedName) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void displayContent(int padding) {
+		wcout << this->getName() << "            " << L"DIR" << "            " << endl;
+		padding += 10;
+		for (int i = 0; i < components.size(); ++i) {
+			
+			wcout << setw(padding); components[i]->displayContent(padding);
+		}
+	}
 	long getSize() {
 		for (int i = 0; i < components.size(); ++i)
 		{
@@ -129,8 +164,7 @@ public:
 	}
 	void AddComponent(Component* obj)
 	{
-		if (obj != NULL)
-		{
+		if (obj != NULL && isDulpicate(obj->getName()) == false){
 			components.push_back(obj);
 		}
 	}
@@ -145,11 +179,26 @@ public:
 };
 class File : public Component
 {
+private:
+	wstring extension;
 public:
 	File(wstring fullName, long size, int clusterIndex) : Component(fullName,size,clusterIndex) {
-
+		int flag = 0;
+		for (int i = 0; i < fullName.size(); i++) {
+			if (fullName[i] == 0x002E && flag == 0) {
+				flag++;
+			}
+			if (flag == 0) {
+				name.push_back(fullName[i]);
+			}
+			else {
+				extension.push_back(fullName[i]);
+		
 	}
-	wstring getName() { return name; }
+	wstring getName() { return name + extension; }
+	void displayContent(int padding) {
+		wcout << name << extension << "            " << L"FILE" << "            " << size << endl;
+	}
 	wstring getExtension() { return extension; }
 	void setSize(int value)
 	{
@@ -161,12 +210,18 @@ public:
 	}
 };
 
-int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[512]);
+
 void drawMenu();
 void quanlywindow();
 void printfNtfs();
 void prinfFat32();
 void GotoXY(int x, int y);
 void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
-void readEntries(LPCWSTR  drive, int readPoint, Component*& root);
+void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk);
 void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
+NTFS* readNTFS(LPCWSTR path);
+
+FAT32* readFAT32(LPCWSTR path);
+
+
+// tim ten trong folder;

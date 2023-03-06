@@ -10,10 +10,11 @@ int main()
     FAT32* fat32Disk = NULL;
     NTFS* ntfsDisk = NULL;
     LPCWSTR* path = NULL;
-    Component* root = NULL;
+    Folder* root = NULL;
     wstring str_turned_to_wstr;
-    wstring temp = L"Xin chào thế giới.txt";
+
    
+
     while (menu)
     {
         quanlywindow();
@@ -142,9 +143,8 @@ int main()
                             path = new LPCWSTR(str_turned_to_wstr.c_str());
                             root = new Folder(str_turned_to_wstr, 0, -1, NULL);
                             fat32Disk = readFAT32(*path);
-                      
                             system("pause");
-                            break;
+                               break;
                         }
 
                         case 1:
@@ -154,8 +154,9 @@ int main()
                                 system("pause");
                             }
                             else { 
-                                readEntries(*path, fat32Disk->byteStartOfRDET(),root);
-                                wcout << endl;
+                                readEntries(*path, fat32Disk->byteStartOfRDET(),root,fat32Disk);
+                                root->displayContent(0);
+                                system("pause");
                             }
                             break;
                         }
