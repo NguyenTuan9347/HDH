@@ -86,6 +86,7 @@ public:
 		for (; i < Sf * bytePerSector;) {
 			unsigned int temp = charToInt(&sector[i], 4);
 			if (temp == 0x0FFFFFFF || temp == 0 || temp == 0xFFFFFFFF) {
+				//kq.push_back((i - 4) / 4);
 				break;
 			}
 			else if (temp == 0xFFFFFF7) {
@@ -95,6 +96,17 @@ public:
 			kq.push_back((i - 4) / 4);
 		}
 		return kq;
+	}
+	vector<unsigned int> testReadFAT(int startingCluster, LPCWSTR path)
+	{
+		unsigned long byteFatSize = bytePerSector * Sf;
+		unsigned char* FATSector = new unsigned char[byteFatSize];
+		vector<unsigned int> kq;
+		ReadSector(path, this->byteStartOfFAT(), FATSector, byteFatSize);
+		for (int i = 0; i < byteFatSize; ++i)
+		{
+			unsigned int dataCluster = 0;
+		}
 	}
 };
 
