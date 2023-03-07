@@ -167,7 +167,7 @@ void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstri
     }
 }
 
-void formingTree(vector<File*> listFile, vector<Folder*> listFolder,Folder* root,wstring path) {
+void formingTree(vector<File*> listFile, vector<Folder*> listFolder,Folder*& root,wstring path) {
     if (root != NULL) delete root;
     root = new Folder(path,0,-1,-1,-1);
     map<long, Folder*> tree;

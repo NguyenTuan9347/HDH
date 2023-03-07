@@ -250,6 +250,6 @@ void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstri
 NTFS* readNTFS(LPCWSTR path);
 
 FAT32* readFAT32(LPCWSTR path);
-void formingTree(vector<File*> listFile, vector<Folder*> listFolder, Folder* root, wstring path);
+void formingTree(vector<File*> listFile, vector<Folder*> listFolder, Folder*& root, wstring path);
 
 // tim ten trong folder;
