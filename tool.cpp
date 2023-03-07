@@ -156,7 +156,11 @@ void drawMenu()
 void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead) {
 
     for (int i = 0; i < (maxCount +1)/ 2 && startIndex < limitByteRead; i++) {
-        if (sector[startIndex] == 0xff || sector[startIndex] == 0x00) return;
+        if (sector[startIndex] == 0xff || sector[startIndex] == 0x00)
+        {
+            if (startIndex == 0 && sector[1] != 0xFE) return;
+            else if (startIndex != 0) return;
+        }
         wchar_t temp;
         temp = sector[startIndex + 1] << 8;
         temp |= sector[startIndex] << 0;
@@ -165,4 +169,22 @@ void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstri
         startIndex += 2;
     }
 }
+int extractText(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead)
+{
+
+    for (int i = 0; i < (maxCount + 1) / 2 && startIndex < limitByteRead; i++) {
+        if (sector[startIndex] == 0xff || sector[startIndex] == 0x00)
+        {
+            if (startIndex == 0 && sector[1] != 0xFE) return 0;
+            else if (startIndex != 0) return 1;
+        }
+        wchar_t temp;
+        temp = sector[startIndex + 1] << 8;
+        temp |= sector[startIndex] << 0;
+        if (temp == 0x0000) break;
+        fullName.push_back(temp);
+        startIndex += 2;
+    }
+}
+
 

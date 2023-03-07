@@ -97,17 +97,6 @@ public:
 		}
 		return kq;
 	}
-	vector<unsigned int> testReadFAT(int startingCluster, LPCWSTR path)
-	{
-		unsigned long byteFatSize = bytePerSector * Sf;
-		unsigned char* FATSector = new unsigned char[byteFatSize];
-		vector<unsigned int> kq;
-		ReadSector(path, this->byteStartOfFAT(), FATSector, byteFatSize);
-		for (int i = 0; i < byteFatSize; ++i)
-		{
-			unsigned int dataCluster = 0;
-		}
-	}
 };
 
 
@@ -259,6 +248,7 @@ void GotoXY(int x, int y);
 void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
 void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk);
 void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
+int extractText(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
 wstring readContent(Component* obj, FAT32* disk, LPCWSTR drive);
 NTFS* readNTFS(LPCWSTR path);
 FAT32* readFAT32(LPCWSTR path);

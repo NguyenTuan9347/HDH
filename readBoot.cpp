@@ -183,7 +183,7 @@ wstring readContent(Component* obj, FAT32* disk, LPCWSTR drive)
 		{
 			ReadSector(drive, byteStart + j * 512, sector, 512);
 			indexByte = 0;
-			formmingUniStr(sector, indexByte, 512, fileContent, 512);
+			if (extractText(sector, indexByte, 512, fileContent, 512) == 1) return fileContent;
 			if (fileContent == L"") wcout << "isNull" << endl;
 		}
 	}
