@@ -167,3 +167,27 @@ void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstri
     }
 }
 
+void formingTree(vector<File*> listFile, vector<Folder*> listFolder,Folder* root,wstring path) {
+    if (root != NULL) delete root;
+    root = new Folder(path,0,-1,-1,-1);
+    map<long, Folder*> tree;
+    for (int i = 0; i < listFolder.size(); i++) {
+        tree[listFolder[i]->getMyID()] = listFolder[i];
+    }
+    for (int i = 0; i < listFolder.size(); i++) {
+        if (listFolder[i]->getParentID() == 0x0000) {
+            root->AddComponent(listFolder[i]);
+        }
+        else {
+            Folder* temp = tree.at(listFolder[i]->getParentID());
+            temp->AddComponent(listFolder[i]);
+            listFolder[i]->setMyParent(temp);
+        }
+
+    }
+    for (int i = 0; i < listFile.size(); i++) {
+        Folder* temp = tree.at(listFile[i]->getParentID());
+        temp->AddComponent(listFile[i]);
+    }
+    return;
+}

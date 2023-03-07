@@ -13,6 +13,7 @@
 #include <uchar.h>
 #include <memory.h>
 #include <iomanip>
+#include <map>
 using namespace std;
 
 #define bytePerSectorIndex 11 // size la 2
@@ -36,8 +37,8 @@ using namespace std;
 #define sectorEmptyClusterIndex 48 // size 2
 #define sectorBackUpBSIndex 50 // size 2    
 
-unsigned long charToInt(unsigned char* arr, int size);
-int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[], unsigned int numberOfBytes);
+unsigned int charToInt(unsigned char* arr, int size);
+int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[],unsigned int numberOfBytes);
 class NTFS {
 public:
 	int bpS, SpC, RS, nH, SpT, TotalSec, LCN, LCN_2, CFRS, CIB;
@@ -74,25 +75,24 @@ public:
 		return Sb * bytePerSector;
 	}
 	unsigned int clusterToByte(unsigned int cluster) {
-		return (Sb + Sf * nF + (cluster - 2) * Sc) * bytePerSector;
+		return (Sb + Sf * nF + (cluster - 2) *Sc)*bytePerSector;
 	}
 	vector<unsigned int> readFAT(int startedCluster, LPCWSTR path) {
-		unsigned char* sector = new unsigned char[bytePerSector * Sf];
+		unsigned char* sector = new unsigned char[bytePerSector*Sf];
 		vector<unsigned int> kq;
 		this->byteStartOfFAT();
-		ReadSector(path, this->byteStartOfFAT(), sector, Sf * bytePerSector);
-		int i = startedCluster * 4 - 4;
+		ReadSector(path, this->byteStartOfFAT(), sector,Sf*bytePerSector);
+		int i = startedCluster*4 - 4;
 		kq.push_back(startedCluster);
 		for (; i < Sf * bytePerSector;) {
 			unsigned int temp = charToInt(&sector[i], 4);
 			if (temp == 0x0FFFFFFF || temp == 0 || temp == 0xFFFFFFFF) {
 				break;
-			}
-			else if (temp == 0xFFFFFF7) {
+			}else if (temp == 0xFFFFFF7){
 				wcout << L"Corrupt file !!! " << endl;
 			}
-			i = temp * 4 - 4;
-			kq.push_back((i - 4) / 4);
+			i = temp*4 - 4;
+			kq.push_back((i -4 )/4);
 		}
 		return kq;
 	}
@@ -103,16 +103,16 @@ class Component
 {
 protected:
 	wstring name;
-	unsigned int dataIndex;
-	long size = 0;
+	unsigned int dataIndex = 0;
+	long size = 0, myParentID = 0, myID = 0;
 public:
 	virtual wstring getName() = 0;
 	virtual long getSize() = 0;
-	Component(wstring fullName, long size, int clusterIndex) {
-
+	long getMyID() { return myID; }
+	long getParentID() { return myID; }
+	Component(wstring fullName, long size, int clusterIndex) {		
 		this->size = size;
 		dataIndex = clusterIndex;
-		wcout << fullName << " has been created " << endl;
 	}
 	virtual void AddComponent(Component* obj)
 	{
@@ -130,15 +130,22 @@ public:
 class Folder : public Component {
 	Component* my_parent = nullptr;
 	vector<Component*> components;
-	int id_Folder;
 public:
-	Folder(wstring fullName, long size, int startIndexData, Component* parent, int id_folder = -1) : Component(fullName, size, startIndexData) {
+	Folder(wstring fullName, long size, int startIndexData, Component* parent) : Component(fullName,size,startIndexData) {
 		copy(fullName.begin(), fullName.end(), back_inserter(name));
 		my_parent = parent;
-		id_Folder = id_folder;
+	}
+	Folder(wstring fullName, long size, int startIndexData, unsigned int myParent, unsigned int ID) : Component(fullName, size, startIndexData) {
+		copy(fullName.begin(), fullName.end(), back_inserter(name));
+		dataIndex = startIndexData;
+		myParentID = myParent;
+		myID = ID;
 	}
 	wstring getName() { return name; }
-
+	void setMyParent(Folder* parent) {
+		if (parent == NULL) return;
+		this->my_parent = parent;
+	}
 	bool isDulpicate(wstring wantedName) {
 		for (int i = 0; i < components.size(); i++) {
 			if (components[i]->getName() == wantedName) {
@@ -149,12 +156,12 @@ public:
 	}
 
 	void displayContent(int padding) {
-		wcout << setw(padding + this->getName().size());
+		long temp = padding + this->getName().size();
+		wcout << setw(temp);
 		wcout << this->getName() << "     " << L"DIR" << "     " << endl;
-		padding += 5;
-		for (int i = 0; i < components.size(); ++i) {
-
-			components[i]->displayContent(padding);
+		padding += 4;
+		for (int i = 0; i < components.size(); ++i) {			
+			 components[i]->displayContent(padding);
 		}
 	}
 	long getSize() {
@@ -166,7 +173,7 @@ public:
 	}
 	void AddComponent(Component* obj)
 	{
-		if (obj != NULL && isDulpicate(obj->getName()) == false) {
+		if (obj != NULL && isDulpicate(obj->getName()) == false){
 			components.push_back(obj);
 		}
 	}
@@ -184,7 +191,7 @@ class File : public Component
 private:
 	wstring extension;
 public:
-	File(wstring fullName, long size, int clusterIndex) : Component(fullName, size, clusterIndex) {
+	File(wstring fullName, long size, int clusterIndex) : Component(fullName,size,clusterIndex) {
 		int flag = 0;
 		for (int i = 0; i < fullName.size(); i++) {
 			if (fullName[i] == 0x002E && flag == 0) {
@@ -198,14 +205,29 @@ public:
 			}
 		}
 	}
+	File(wstring fullName, long size, int startIndexData, unsigned int myParent, unsigned int ID) : Component(fullName, size, startIndexData) {
+		int flag = 0;
+		for (int i = 0; i < fullName.size(); i++) {
+			if (fullName[i] == 0x002E && flag == 0) {
+				flag++;
+			}
+			if (flag == 0) {
+				name.push_back(fullName[i]);
+			}
+			else {
+				extension.push_back(fullName[i]);
+			}
+		}
+		dataIndex = startIndexData;
+		myParentID = myParent;
+		myID = ID;
+	}
 	wstring getName() { return name + extension; }
 	void displayContent(int padding) {
-		wcout << setw(padding + name.size()) << name << extension << "     " << L"FILE" << "     " << size << endl;
+		long temp = padding + this->getName().size();
+		wcout << setw(temp) << this->getName() << "     " << L"FILE" << "     "  << size << endl;
 	}
-	wstring getExtension() 
-	{
-		return extension; 
-	}
+	wstring getExtension() { return extension; }
 	void setSize(int value)
 	{
 		size = value;
@@ -228,4 +250,6 @@ void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstri
 NTFS* readNTFS(LPCWSTR path);
 
 FAT32* readFAT32(LPCWSTR path);
+void formingTree(vector<File*> listFile, vector<Folder*> listFolder, Folder* root, wstring path);
 
+// tim ten trong folder;

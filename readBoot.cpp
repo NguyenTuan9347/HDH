@@ -39,55 +39,54 @@ FAT32* readFAT32(LPCWSTR path) {
 	return new FAT32(sector);
 }
 
-
-void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName)
-{
+void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName){
 	int indexByte = 0;
-	wcout << readPoint << endl;
-	if (checkValid - 32 < 0)
-	{
-		ReadSector(drive, readPoint - 512, sector, 512);
+	unsigned char *testSector = &sector[0];
+	int flag = 0;
+	if (checkValid - 32 < 0) {	
+		testSector = new unsigned char[512];
+		flag = 1;
+		ReadSector(drive, readPoint - 512, testSector, 512);
 		checkValid = 491;
-	}
-	else
-	{
+	} else {
 		checkValid -= 32;
 	}
-	if (sector[checkValid] == 15) 
+	if (testSector[checkValid] == 15)
 		fullName.erase(fullName.begin(), fullName.end());
 	else return;
-	while (sector[checkValid] == 15) {
-		wcout << checkValid << endl;
+	while (testSector[checkValid] == 15) {
 		indexByte = checkValid - 10;
-		formmingUniStr(sector, indexByte, 10, fullName,512);
+		formmingUniStr(testSector, indexByte, 10, fullName, 512);
 		indexByte = checkValid - 11 + 14;
-		formmingUniStr(sector, indexByte, 12, fullName,512);
+		formmingUniStr(testSector, indexByte, 12, fullName, 512);
 		indexByte = checkValid - 11 + 28;
-		formmingUniStr(sector, indexByte, 4, fullName,512);
-		if (checkValid - 32 < 0)
-		{
-			wcout << readPoint << endl;
-			readPoint -= 512;
-			ReadSector(drive, readPoint, sector,512);
-			checkValid = 491;
-			for (int i = 0; i < 512; i++) {
-				if (i != 0 && i % 16 == 0) wcout << endl;
-				wcout << hex << sector[i] << " ";
+		formmingUniStr(testSector, indexByte, 4, fullName, 512);
+		if (checkValid - 32 < 0) {
+			if (flag == 1){
+				delete[] testSector;
 			}
+			testSector = new unsigned char[512];
+			readPoint -= 512;
+			ReadSector(drive, readPoint, testSector, 512);
+			checkValid = 491;
 		}
 		else checkValid -= 32;
 	}
-	
+	if (flag == 1) {
+		delete[] testSector;
+	}
 }
 
-void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
+
+
+void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk) {
 	int sectorOfRDET = 8;
 	//int count = 0;
 	int i = 0;
-	while(1) {
+	while (1) {
 		unsigned char sector[512];
 		readPoint += (i * 512);
-		ReadSector(drive,readPoint , sector,512);
+		ReadSector(drive, readPoint, sector, 512);
 		if (sector[0] == 0x00) break;
 		int checkValid = 11; //Kiểm tra có phải là file, folder hay Read-Only không
 		int indexByte = 0;
@@ -95,7 +94,7 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 		while (checkValid < 512) {
 			wstring fullName = L"";
 			long size = 0;
-			unsigned int clusterStarted ;
+			unsigned int clusterStarted;
 			if (checkValid - 11 >= 0 && sector[checkValid - 11] != 0xE5) {
 				int originPoin = checkValid - 11;
 				if (sector[checkValid] == 32) {
@@ -119,6 +118,7 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 						indexByte++;
 					}
 					//Xử lý tồn tại entry phụ (hoặc không)
+					//unsigned char testSector[512];
 					handleFakeEntries(drive, readPoint, sector, checkValid, fullName);
 					File* newFile = new File(fullName, size, clusterStarted);
 					root->AddComponent(newFile);
@@ -130,10 +130,10 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 					clusterStarted = sector[originPoin + 20] << 16;
 					clusterStarted |= sector[originPoin + 21] << 24;
 					clusterStarted |= sector[originPoin + 26];
-					clusterStarted |= sector[originPoin + 27] << 8;					
+					clusterStarted |= sector[originPoin + 27] << 8;
 					//Lấy tên từ 8 byte đầu				
 					for (int i = 0; i < 8; ++i)
-					{						
+					{
 						fullName.push_back((wchar_t)sector[indexByte]);
 						indexByte++;
 					}
@@ -149,9 +149,8 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 					Folder* newFolder = new Folder(fullName, size, clusterStarted, root);
 					vector<unsigned int> SDET = currDisk->readFAT(clusterStarted, drive);
 					for (int i = 0; i < SDET.size(); i++) {
-						unsigned char subCon[512];
 						unsigned int byteData = currDisk->clusterToByte(SDET[i]);
-						readEntries(drive, byteData,newFolder,currDisk);
+						readEntries(drive, byteData, newFolder, currDisk);
 					}
 					root->AddComponent(newFolder);
 				}
@@ -165,9 +164,4 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 		}
 		i++;
 	}
-}
-
-void readContent()
-{
-
 }
