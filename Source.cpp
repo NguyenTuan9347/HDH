@@ -5,6 +5,7 @@
 #include <vector>
 #include <io.h>
 #include <fcntl.h>
+#include <iomanip>
 using namespace std;
 
 #define bytePerSector_ 11 // size la 2
@@ -165,7 +166,7 @@ public:
     }
 };
 class MFT {
-    Component Directory();
+    vector<string> File; vector<string> Folder;
     bool resident_content_check(unsigned char sector[], int id) {
         if (sector[id] == 0)
             return 1;
@@ -176,26 +177,40 @@ class MFT {
         b = number % 16;
         a = (number - b) / 16;
     }
-    bool check_active_or_deleted(unsigned char sector[],bool &check_file) {
-        if (sector[22] == 1)
+    bool check_active_or_deleted(unsigned char entry[],bool &check_file) {
+        if (entry[22] == 1)
         {
             check_file = true;
             return 1;
         }
-        if (sector[22] == 3)
+        if (entry[22] == 3)
             return 1;
         return 0;
     }
+    void Get_Size_content_resident(unsigned char entry[],int $DATA_Atribute_ID,int &Byte_length_content) {
+        int Size_Data_ID = $DATA_Atribute_ID + 16;
+        Byte_length_content = charToInt(&entry[Size_Data_ID], 4);
+        wcout << Byte_length_content << " Bytes" << endl;
+
+        int Start_content_index = $DATA_Atribute_ID + charToInt(&entry[$DATA_Atribute_ID + 20], 2);
+        //wstring content;
+        ////formmingUniStr(entry, Start_content_index, Byte_length_content, content, 1024);
+        //for (int i = 0; i < Byte_length_content; i++)
+        //    content += char(charToInt(&entry[Start_content_index + i], 1));
+        //wcout << content << endl;
+    }
 public:
     MFT() {};
-    MFT(LPCWSTR path) {
+    MFT(LPCWSTR path,double MFT_entry_ID) {
         unsigned char entry[1024];
+        bool found = false;
+        //3221265408
         for (int i = 0; i < i + 1; i++) {
-            ReadSector(path, 3221265408+i*1024, entry, 1024);
-            //check null entry
-            if(charToInt(&entry[0], 1)==0)
-                break;
-            
+            ReadSector(path, MFT_entry_ID+i*1024, entry, 1024);
+            //Check end entry    
+            if (charToInt(&entry[0], 1) == 0)
+                    break;
+
             //-----------------------------------------CHECK FILE OR FOLDER----------CHECK ACTIVE OR DELETED
             bool check_file = false;
             wcout << check_active_or_deleted(entry,check_file) << endl;
@@ -205,8 +220,8 @@ public:
             else
                 wcout << "Folder" << endl;
             //---------------------------------------------------GET NAME
-#define $FILE_NAME_Atribute_ID 152
-#define Length_name_ID $FILE_NAME_Atribute_ID+88
+            int $FILE_NAME_Atribute_ID=152;
+            int Length_name_ID = $FILE_NAME_Atribute_ID + 88;
             int Name_index = $FILE_NAME_Atribute_ID + 90;
             //Unicode 2 byte each character
             int Byte_of_Name_length = 2*charToInt(&entry[Length_name_ID], 1);
@@ -226,17 +241,8 @@ public:
             bool  check_resident=resident_content_check(entry, resident_content_id);
             //wcout << check_resident << endl;
             if (check_resident) {
-                //--------------SIZE DATA
-                int Size_Data_ID = $DATA_Atribute_ID + 16;
-                int Byte_length_content = charToInt(&entry[Size_Data_ID], 4);
-                wcout << Byte_length_content << " Bytes" << endl;
-
-                int Start_content_index = $DATA_Atribute_ID + charToInt(&entry[$DATA_Atribute_ID + 20], 2);
-                wstring content;
-                //formmingUniStr(entry, Start_content_index, Byte_length_content, content, 1024);
-                for (int i = 0; i < Byte_length_content; i++)
-                    content += char(charToInt(&entry[Start_content_index + i], 1));
-                wcout << content << endl;
+                int Byte_length_content;
+                Get_Size_content_resident(entry, $DATA_Atribute_ID, Byte_length_content);
             }
             else {
                 if (check_file) {
@@ -316,10 +322,10 @@ public:
         VolumeSerialNumber = charToInt(&sector[VolumeSerialNumber_], 8);
     }
     void Read_MFT(LPCWSTR path) {
-        MasterFileTable = MFT(path);
+        MasterFileTable = MFT(path,this->location_sector_start_MFT());
     }
-    float location_sector_start_MFT() {
-        return LogicalClusterNumber$MFT * SectorPerCluster + HiddenSectors;
+    double location_sector_start_MFT() {
+        return LogicalClusterNumber$MFT * SectorPerCluster *512 + 39936;
     }
 };
 NTFS readNTFS(LPCWSTR path) {
