@@ -169,7 +169,7 @@ int main()
                             }
                             else {
                                 wstring command;
-                                wstring content = readContent(root->findMe(L"tên dài vl.txt"), fat32Disk, *path);
+                                wstring content = readContent(root->findMe(L"test lần cuối.txt"), fat32Disk, *path);
                                 wcout << content << endl;
                                 system("pause");
                             }

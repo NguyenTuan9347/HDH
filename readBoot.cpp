@@ -54,11 +54,10 @@ void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], 
 	{
 		checkValid -= 32;
 	}
-	if (sector[checkValid] == 15) 
-		fullName.erase(fullName.begin(), fullName.end());
+	if (sector[checkValid] == 15) fullName.erase(fullName.begin(), fullName.end());
 	else return;
 	while (sector[checkValid] == 15) {
-		//wcout << checkValid << endl;
+
 		indexByte = checkValid - 10;
 		formmingUniStr(sector, indexByte, 10, fullName,512);
 		indexByte = checkValid - 11 + 14;
@@ -67,10 +66,10 @@ void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], 
 		formmingUniStr(sector, indexByte, 4, fullName,512);
 		if (checkValid - 32 < 0)
 		{
-			//wcout << readPoint << endl;
-			unsigned char testSector[512];
+			wcout << "sector change" << " - " << readPoint << endl;
+			unsigned char anotherSector[512];
 			readPoint -= 512;
-			ReadSector(drive, readPoint, testSector,512);
+			ReadSector(drive, readPoint, anotherSector,512);
 			checkValid = 491;
 		}
 		else checkValid -= 32;
@@ -118,7 +117,7 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk){
 						indexByte++;
 					}
 					//Xử lý tồn tại entry phụ (hoặc không)
-					//unsigned char testSector[512];
+					wcout << fullName << " - " << readPoint << endl;
 					handleFakeEntries(drive, readPoint, sector, checkValid, fullName);
 					File* newFile = new File(fullName, size, clusterStarted);
 					root->AddComponent(newFile);
