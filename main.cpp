@@ -169,8 +169,9 @@ int main()
                             }
                             else {
                                 wstring command;
-                                wstring content = readContent(root->findMe(L"test lần cuối.txt"), fat32Disk, *path);
-                                wcout << content << endl;
+                                //wstring content = readContent(root->findMe(L"test lần cuối"), fat32Disk, *path);
+                                //wcout << content << endl;
+                                readContentFAT(root->findMe(L"test lần cuối"), fat32Disk, *path);
                                 system("pause");
                             }
                             break;

@@ -251,6 +251,7 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk);
 void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
 int extractText(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
 wstring readContent(Component* obj, FAT32* disk, LPCWSTR drive);
+void readContentFAT(Component* obj, FAT32* disk, LPCWSTR drive);
 NTFS* readNTFS(LPCWSTR path);
 FAT32* readFAT32(LPCWSTR path);
 
