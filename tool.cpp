@@ -26,7 +26,7 @@ unsigned int charToInt(unsigned char* arr, int size) {
 }
 
 
-int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[],unsigned int numberOfBytes)
+int ReadSector(LPCWSTR  drive, double readPoint, unsigned char sector[], int bytetoread = 512)
 {
     int retCode = 0;
     DWORD bytesRead;
@@ -42,16 +42,23 @@ int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[],unsigned in
 
     if (device == INVALID_HANDLE_VALUE) // Open Error
     {
-        wprintf(L"CreateFile: %u\n", GetLastError());
+        printf("CreateFile: %u\n", GetLastError());
         return 1;
     }
 
-    SetFilePointer(device, readPoint, NULL, FILE_BEGIN);//Set a Point to Read
+    LARGE_INTEGER liDistanceToMove;
+    liDistanceToMove.QuadPart = readPoint;
+    SetFilePointerEx(device, liDistanceToMove, NULL, FILE_BEGIN);//Set a Point to Read
 
-    if (!ReadFile(device, sector, numberOfBytes, &bytesRead, NULL))
+    if (!ReadFile(device, sector, bytetoread, &bytesRead, NULL))
     {
-        wprintf(L"ReadFile: %u\n", GetLastError());
+        printf("ReadFile: %u\n", GetLastError());
     }
+    else
+    {
+        //printf("Success!\n");
+    }
+    CloseHandle(device);
 }
 
 
@@ -94,6 +101,33 @@ void printfNtfs()
     GotoXY(40, 15);
     wcout << " |_| \\_|  |_|  |_|   |_____/ " << endl;
 
+}
+void print_file_NFTS_content(LPCWSTR path, double content_start_offset, int Byte_length_content) {
+    if (Byte_length_content > 700) {
+        wstring content;
+        unsigned char* sector_content = new unsigned char[Byte_length_content];
+        ReadSector(path, content_start_offset, sector_content, Byte_length_content);
+        formmingUniStrNTFS(sector_content, 0, Byte_length_content, content);
+        wcout << content << endl;
+    }
+    else {
+        unsigned char entry[1024];
+        ReadSector(path, content_start_offset, entry, 1024);
+        int $FILE_NAME_Atribute_ID = 152;
+        int Length_name_ID = $FILE_NAME_Atribute_ID + 88;
+        int Name_index = $FILE_NAME_Atribute_ID + 90;
+        int Byte_of_Name_length = 2 * charToInt(&entry[Length_name_ID], 1);
+        int $FILE_NAME_Atribute_length = 16 * 5 + 8 + 2 + Byte_of_Name_length;
+        int $DATA_Atribute_ID = $FILE_NAME_Atribute_ID + $FILE_NAME_Atribute_length;
+        while (charToInt(&entry[$DATA_Atribute_ID], 1) != 128)
+            $DATA_Atribute_ID++;
+
+        int Start_content_index = $DATA_Atribute_ID + charToInt(&entry[$DATA_Atribute_ID + 20], 1);
+        //wcout << Start_content_index << endl;
+        wstring content;
+        formmingUniStrNTFS(entry, Start_content_index, Byte_length_content, content);
+        wcout << content << endl;
+    }
 }
 void quanlywindow()
 {
@@ -164,6 +198,16 @@ void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstri
         if (temp == 0x0000) break;
         fullName.push_back(temp);
         startIndex += 2;
+    }
+}
+void formmingUniStrNTFS(unsigned char sector[], int startIndex, int maxCount, wstring& fullName) {
+    int i = 0;
+    if (sector[startIndex] == 0xff) i += 2;
+    for (; i < maxCount; i = i + 2) {
+        wchar_t temp;
+        temp = sector[startIndex + i + 1] << 8;
+        temp |= sector[startIndex + i] << 0;
+        fullName.push_back(temp);
     }
 }
 
