@@ -82,7 +82,7 @@ public:
 		vector<unsigned int> kq;
 		this->byteStartOfFAT();
 		ReadSector(path, this->byteStartOfFAT(), sector,Sf*bytePerSector);
-		int i = startedCluster*4 - 4;
+		int i = startedCluster*4;
 		kq.push_back(startedCluster);
 		for (; i < Sf * bytePerSector;) {
 			unsigned int temp = charToInt(&sector[i], 4);
@@ -91,9 +91,11 @@ public:
 			}else if (temp == 0xFFFFFF7){
 				wcout << L"Corrupt file !!! " << endl;
 			}
-			i = temp*4 - 4;
-			kq.push_back((i -4 )/4);
+			i = temp*4;
+			kq.push_back(temp);
 		}
+		if(sector != NULL)
+		delete[] sector;
 		return kq;
 	}
 };
