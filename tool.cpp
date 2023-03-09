@@ -27,7 +27,7 @@ unsigned long charToInt(unsigned char* arr, int size) {
 }
 
 
-int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[],unsigned int numberOfBytes)
+int ReadSector(LPCWSTR  drive, double readPoint, unsigned char sector[],unsigned int numberOfBytes)
 {
     int retCode = 0;
     DWORD bytesRead;
@@ -156,11 +156,7 @@ void drawMenu()
 void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead) {
 
     for (int i = 0; i < (maxCount +1)/ 2 && startIndex < limitByteRead; i++) {
-        if (sector[startIndex] == 0xff || sector[startIndex] == 0x00)
-        {
-            if (startIndex == 0 && sector[1] != 0xFE) return;
-            else if (startIndex != 0) return;
-        }
+        if (sector[startIndex] == 0xff || sector[startIndex] == 0x00) return;
         wchar_t temp;
         temp = sector[startIndex + 1] << 8;
         temp |= sector[startIndex] << 0;
@@ -173,11 +169,7 @@ int extractText(unsigned char sector[], int& startIndex, int maxCount, wstring& 
 {
 
     for (int i = 0; i < (maxCount + 1) / 2 && startIndex < limitByteRead; i++) {
-        if (sector[startIndex] == 0xff || sector[startIndex] == 0x00)
-        {
-            if (startIndex == 0 && sector[1] != 0xFE) return 0;
-            else if (startIndex != 0) return 1;
-        }
+        if (sector[startIndex] == 0xff && sector[startIndex + 1] == 0xff ||  sector[startIndex] == 0x00 && sector[startIndex + 1] == 0x00) return 1;
         wchar_t temp;
         temp = sector[startIndex + 1] << 8;
         temp |= sector[startIndex] << 0;
@@ -185,6 +177,31 @@ int extractText(unsigned char sector[], int& startIndex, int maxCount, wstring& 
         fullName.push_back(temp);
         startIndex += 2;
     }
+}
+wstring parseExtension(wstring objName)
+{
+    int i = objName.find_last_of(L'.');
+    return objName.substr(i + 1, objName.length() - i - 1);
+}
+int parseCommand(wstring command, wstring &objName, wstring &extension)
+{
+    wstring temp;
+    for (int i = 0; i < command.length(); ++i)
+    {
+        if (command[i] == L' ')
+        {
+            //wcout << i << endl;
+            objName = command.substr(i + 1, command.length() - i - 1); //cd test.txt
+            wcout << temp  << " - " << objName << endl;
+            if (temp == L"cd") return 0;
+            if (temp == L"open")
+            {
+                extension = parseExtension(objName);
+                return 1;
+            }
+        }
+        temp.push_back((wchar_t)command[i]);
+    }   
 }
 
 

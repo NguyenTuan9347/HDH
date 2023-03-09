@@ -13,6 +13,8 @@
 #include <uchar.h>
 #include <memory.h>
 #include <iomanip>
+#include <cwctype>
+#include <algorithm>
 using namespace std;
 
 #define bytePerSectorIndex 11 // size la 2
@@ -37,7 +39,7 @@ using namespace std;
 #define sectorBackUpBSIndex 50 // size 2    
 
 unsigned long charToInt(unsigned char* arr, int size);
-int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[], unsigned int numberOfBytes);
+int ReadSector(LPCWSTR  drive, double readPoint, unsigned char sector[], unsigned int numberOfBytes);
 class NTFS {
 public:
 	int bpS, SpC, RS, nH, SpT, TotalSec, LCN, LCN_2, CFRS, CIB;
@@ -99,8 +101,6 @@ public:
 		return kq;
 	}
 };
-
-
 class Component
 {
 protected:
@@ -122,7 +122,9 @@ public:
 	{
 
 	}
+	virtual void output() = 0;
 	virtual void displayContent(int padding) = 0;
+	virtual void displaySurfaceContent() = 0;
 	virtual void RemoveComponent(Component* obj)
 	{
 
@@ -140,6 +142,7 @@ public:
 		copy(fullName.begin(), fullName.end(), back_inserter(name));
 		my_parent = parent;
 		id_Folder = id_folder;
+		
 	}
 	wstring getName() { return name; }
 	
@@ -151,7 +154,13 @@ public:
 		}
 		return false;
 	}
-
+	void displaySurfaceContent()
+	{
+		for (int i = 0; i < components.size(); ++i)
+		{
+			components[i]->output();
+		}
+	}
 	void displayContent(int padding) {
 		wcout << setw(padding + this->getName().size());
 		wcout << this->getName() << "     " << L"DIR" << "     " << endl;
@@ -162,9 +171,12 @@ public:
 		}
 	}
 	Component* findMe(wstring myName) {
-		if (name == myName) return this;
+		wstring temp = name;
+		if (temp == myName) return this;
 		for (int i = 0; i < components.size(); i++) {
-			if (components[i]->getName() == myName) return components[i];
+			temp = components[i]->getName();
+			wcout << myName << " - " << temp << endl;
+			if (temp == myName) return components[i];
 		}
 		return NULL;
 	}
@@ -189,7 +201,12 @@ public:
 		}
 		components.clear();
 	}
+	void output()
+	{
+		wcout << name << setw(16) << this->getSize() << endl;
+	}
 };
+
 class File : public Component
 {
 private:
@@ -210,7 +227,8 @@ public:
 		}
 	}
 	Component* findMe(wstring myName) {
-		if (myName == (name + extension)) {
+		wstring temp = name + extension;
+		if (myName == temp) {
 			return this;
 		}
 		else {
@@ -238,6 +256,11 @@ public:
 	{
 		return size;
 	}
+	void output()
+	{
+		wcout << name << extension << setw(16) << size << endl;
+	}
+	void displaySurfaceContent() {}
 };
 
 
@@ -246,12 +269,13 @@ void quanlywindow();
 void printfNtfs();
 void prinfFat32();
 void GotoXY(int x, int y);
-void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
+void handleFakeEntries(LPCWSTR drive, unsigned long readPoint, unsigned char sector[512], int checkValid, wstring& fullName);
 void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk);
 void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
 int extractText(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead);
 wstring readContent(Component* obj, FAT32* disk, LPCWSTR drive);
 void readContentFAT(Component* obj, FAT32* disk, LPCWSTR drive);
+int parseCommand(wstring command, wstring& objName, wstring &extension);
 NTFS* readNTFS(LPCWSTR path);
 FAT32* readFAT32(LPCWSTR path);
 

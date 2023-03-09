@@ -4,6 +4,8 @@
 int main()
 {
     int dump = _setmode(_fileno(stdout), _O_U16TEXT);
+    int dump2 = _setmode(_fileno(stdin), _O_U16TEXT);
+
     int menu_item = 0;
     int x = 21;
     bool menu = true;
@@ -12,7 +14,7 @@ int main()
     LPCWSTR* path = NULL;
     Folder* root = NULL;
     wstring str_turned_to_wstr;
-
+    int toggle = 0;
    
 
     while (menu)
@@ -127,16 +129,15 @@ int main()
                     }
                     system("cls");
                     if (GetAsyncKeyState(VK_RETURN))
-                    { // Enter key pressed
-
+                    {
                         switch (menu_fat32)
                         {
                         case 0:
                         {
                             wcout << "Drive letter of USB?: ";
                             string disk = "\\\\.\\?:";
-                            char name;
-                            cin >> name;
+                            wchar_t name;
+                            wcin >> name;
                             disk[4] = name;
                             
                             str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
@@ -168,10 +169,38 @@ int main()
                                 system("pause");
                             }
                             else {
-                                wstring command;
-                                //wstring content = readContent(root->findMe(L"test lần cuối"), fat32Disk, *path);
-                                //wcout << content << endl;
-                                readContentFAT(root->findMe(L"test lần cuối"), fat32Disk, *path);
+                                wstring command, objName, extension;
+                                Component* next, *temp = root;
+                                root->displaySurfaceContent();
+                                wcout << "_____________________________________________________________________________________________________" << endl;
+                                wcout << "                                             Command guide" << endl;
+                                wcout << "- cd [folder name]: to change directory view to the designated folder" << endl;
+                                wcout << "- open [file name]: to view contents of .txt file (or view app suggestions to open other file types)" << endl;
+                                wcout << "NOTE: Please enter the name exactly as displayed here" << endl;
+                                wcout << "Type here: ";
+                                if (toggle == 0)
+                                {
+                                    wcin.ignore();
+                                    toggle = 1;
+                                }
+                                getline(wcin, command);
+                                if (parseCommand(command, objName, extension) == 1)
+                                {
+                                    readContentFAT(root->findMe(objName), fat32Disk, *path);
+                                }
+                                else
+                                {
+                                    while (parseCommand(command, objName, extension) == 0)
+                                    {
+                                        transform(objName.begin(), objName.end(), objName.begin(), towupper);
+                                        next = temp->findMe(objName);
+                                        temp = next;
+                                        system("cls");
+                                        next->displaySurfaceContent();
+                                        getline(wcin, command);
+                                    }
+                                    if (extension == L"txt" || extension == L"TXT") readContentFAT(root->findMe(objName), fat32Disk, *path);
+                                }
                                 system("pause");
                             }
                             break;
@@ -254,8 +283,8 @@ int main()
                         {
                             wcout << "Drive letter of USB?: ";
                             string disk = "\\\\.\\?:";
-                            char name;
-                            cin >> name;
+                            wchar_t name;
+                            wcin >> name;
                             disk[4] = name;
                             str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
                             path = new LPCWSTR(str_turned_to_wstr.c_str());

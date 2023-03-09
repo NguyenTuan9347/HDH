@@ -39,7 +39,7 @@ FAT32* readFAT32(LPCWSTR path) {
 	return new FAT32(sector);
 }
 
-void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], int checkValid, wstring& fullName) {
+void handleFakeEntries(LPCWSTR drive, unsigned long readPoint, unsigned char sector[512], int checkValid, wstring& fullName) {
 	int indexByte = 0;
 	unsigned char* testSector = &sector[0];
 	int flag = 0;
@@ -58,7 +58,8 @@ void handleFakeEntries(LPCWSTR drive, int readPoint, unsigned char sector[512], 
 		if (&testSector[0] != &sector[0]) delete[] testSector;
 		return;
 	}
-	while (testSector[checkValid] == 15) {
+	while (testSector[checkValid] == 15) 
+	{
 		indexByte = checkValid - 10;
 		formmingUniStr(testSector, indexByte, 10, fullName, 512);
 		indexByte = checkValid - 11 + 14;
@@ -124,7 +125,7 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk) 
 						indexByte++;
 					}
 					//Xử lý tồn tại entry phụ (hoặc không)
-					handleFakeEntries(drive, readPoint, sector, checkValid, fullName);
+					handleFakeEntries(drive, moveOff, sector, checkValid, fullName);
 					File* newFile = new File(fullName, size, clusterStarted);
 					root->AddComponent(newFile);
 				}
@@ -143,7 +144,7 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk) 
 						indexByte++;
 					}
 					//Xử lý tồn tại entry phụ (hoặc không)
-					handleFakeEntries(drive, readPoint, sector, checkValid, fullName);
+					handleFakeEntries(drive, moveOff, sector, checkValid, fullName);
 					Folder* newFolder = new Folder(fullName, size, clusterStarted, root);
 					vector<unsigned int> SDET = currDisk->readFAT(clusterStarted, drive);
 					for (int i = 0; i < SDET.size(); i++) {
@@ -156,39 +157,14 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk) 
 				{
 					//Read-only
 				}
-
 			}
 			checkValid += 32;
 		}
 		i++;
+		
 	}
-}
-
-wstring readContent(Component* obj, FAT32* disk, LPCWSTR drive)
-{
-	wstring fileContent;
-	int startingCluster = obj->getStartingCluster();
-	//wcout << obj->getName();
-	vector <unsigned int> dataSector = disk->readFAT(startingCluster, drive);
-	int indexByte;
-	//wcout << L"Số lượng phần tử" << dataSector.size() << endl;
-	for (int i = 0; i < dataSector.size(); ++i)
-	{
-		unsigned char sector[512];
-		int byteStart = disk->clusterToByte(dataSector[i]);
-		wcout << byteStart << endl;
-		for (int j = 0; j < disk->Sc; ++j)
-		{
-			ReadSector(drive, byteStart + j * 512, sector, 512);
-			indexByte = 0;
-			if (extractText(sector, indexByte, 512, fileContent, 512) == 1) return fileContent;
-			if (fileContent == L"") wcout << "isNull" << endl;
-		}
-	}
-	return fileContent;
 }
 void readContentFAT(Component* obj, FAT32* disk, LPCWSTR drive) {
-
 	int startingCluster = obj->getStartingCluster();
 	//wcout << obj->getName();
 	wstring fileContent;
@@ -197,13 +173,17 @@ void readContentFAT(Component* obj, FAT32* disk, LPCWSTR drive) {
 	for (int i = 0; i < dataSector.size(); ++i) {
 		unsigned char sector[512];
 		int byteStart = disk->clusterToByte(dataSector[i]);
-		wcout << byteStart << endl;
 		ReadSector(drive, byteStart, sector, 512);
 		indexByte = 0;
 		if (i == 0 && (sector[0] != 0xFF || sector[1] != 0xFE)) return;
 		if (i == 0) indexByte = 2;
-		for (int j = 0; j < 7; j++) {
-			formmingUniStr(sector, indexByte, 512, fileContent, 512);
+		for (int j = 0; j < disk->Sc; ++j) {
+			//formmingUniStr(sector, indexByte, 512, fileContent, 512);
+			if (extractText(sector, indexByte, 512, fileContent, 512) == 1)
+			{
+				wcout << fileContent;
+				return;
+			}
 			byteStart += 512;
 			ReadSector(drive, byteStart, sector, 512);
 			indexByte = 0;
