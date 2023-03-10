@@ -12,9 +12,6 @@ int main()
     LPCWSTR* path = NULL;
     Folder* root = NULL;
     wstring str_turned_to_wstr;
-
-   
-
     while (menu)
     {
         quanlywindow();
@@ -147,8 +144,7 @@ int main()
                                break;
                         }
 
-                        case 1:
-                        {
+                        case 1: {
                             if (fat32Disk == NULL || path == NULL) {
                                 wcout << "No data of disk has been found, please try again " << endl;
                                 system("pause");
@@ -156,13 +152,25 @@ int main()
                             else { 
                                 readEntries(*path, fat32Disk->byteStartOfRDET(),root,fat32Disk);
                                 root->displayContent(0);
+                                unsigned long reserveSize = fat32Disk->Sv * fat32Disk->bytePerSector, consumedSize = root->getSize();
+                                wcout << "Size has been used : " << consumedSize << endl;
+                                wcout << "Size left  : " << reserveSize << endl;
+
                                 system("pause");
                             }
                             break;
                         }
-                        case 2:
-                        {
-                            mf32 = false;
+                        case 2: {
+                            if (fat32Disk == NULL || path == NULL || root == NULL) {
+                                wcout << "No data of disk has been found, please try again " << endl;
+                                system("pause");
+                            }
+                            else {
+                               Component* temp = root->findMe(L"TEMP.TXT");
+                                if (temp != NULL)
+                                readContentFAT(temp, fat32Disk, *path);
+                                system("pause");
+                            }
                             break;
                         }
 
@@ -248,24 +256,39 @@ int main()
                             disk[4] = name;
                             str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
                             path = new LPCWSTR(str_turned_to_wstr.c_str());
-                            root = new Folder(str_turned_to_wstr, 0, -1, NULL);
                             ntfsDisk = readNTFS(*path);
                             system("pause");
                             break;
                         }
 
-                        case 1:
-                        {
-
+                        case 1: {
+                            if (ntfsDisk == NULL || path == NULL) {
+                                wcout << "No data of disk has been found, please try again " << endl;
+                                system("pause");
+                            }
+                            else {
+                                ntfsDisk->Read_MFT(*path);
+                                formingTree(ntfsDisk->MasterFileTable.FileList, ntfsDisk->MasterFileTable.FolderList, root, str_turned_to_wstr);
+                                root->displayContent(0);
+                                unsigned long reserveSize = ntfsDisk->TotalSectorsT * ntfsDisk->bytePerSector, consumedSize = root->getSize();
+                                wcout << "Size has been used : " << consumedSize << endl;
+                                wcout << "Size left  : " << reserveSize << endl;
+                                system("pause");
+                            }
                             break;
                         }
 
-                        case 2:
-                        {
+                        case 2: {
+                            File* wantedFile = (File*)(root->findMe(L"temp.txt"));
+                            print_file_NFTS_content(*path,wantedFile->getStartingCluster(), root->findMe(L"temp.txt")->getSize());
+                            system("pause");
+                        }
+                        case 3: {
+                            delete root;
+                            delete ntfsDisk;
                             mntf = false;
                             break;
                         }
-
 
                         default:
                             mntf = false;
@@ -275,8 +298,6 @@ int main()
 
                     }
                 }
-                break;
-
                 break;
             }
 
@@ -300,5 +321,3 @@ int main()
     if (path != NULL) delete path;
     return 0;
 }
-
-

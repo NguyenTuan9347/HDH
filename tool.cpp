@@ -3,7 +3,7 @@
 
 
 
-unsigned int charToInt(unsigned char* arr, int size) {
+unsigned long charToInt(unsigned char* arr, int size) {
     unsigned char* temp = new unsigned char[size];
     unsigned int kq = 0;
     int shifter = 0, flag = 0;
@@ -26,7 +26,7 @@ unsigned int charToInt(unsigned char* arr, int size) {
 }
 
 
-int ReadSector(LPCWSTR  drive, double readPoint, unsigned char sector[], int bytetoread = 512)
+int ReadSector(LPCWSTR  drive, int readPoint, unsigned char sector[],unsigned int numberOfBytes)
 {
     int retCode = 0;
     DWORD bytesRead;
@@ -42,23 +42,16 @@ int ReadSector(LPCWSTR  drive, double readPoint, unsigned char sector[], int byt
 
     if (device == INVALID_HANDLE_VALUE) // Open Error
     {
-        printf("CreateFile: %u\n", GetLastError());
+        wprintf(L"CreateFile: %u\n", GetLastError());
         return 1;
     }
 
-    LARGE_INTEGER liDistanceToMove;
-    liDistanceToMove.QuadPart = readPoint;
-    SetFilePointerEx(device, liDistanceToMove, NULL, FILE_BEGIN);//Set a Point to Read
+    SetFilePointer(device, readPoint, NULL, FILE_BEGIN);//Set a Point to Read
 
-    if (!ReadFile(device, sector, bytetoread, &bytesRead, NULL))
+    if (!ReadFile(device, sector, numberOfBytes, &bytesRead, NULL))
     {
-        printf("ReadFile: %u\n", GetLastError());
+        wprintf(L"ReadFile: %u\n", GetLastError());
     }
-    else
-    {
-        //printf("Success!\n");
-    }
-    CloseHandle(device);
 }
 
 
@@ -101,33 +94,6 @@ void printfNtfs()
     GotoXY(40, 15);
     wcout << " |_| \\_|  |_|  |_|   |_____/ " << endl;
 
-}
-void print_file_NFTS_content(LPCWSTR path, double content_start_offset, int Byte_length_content) {
-    if (Byte_length_content > 700) {
-        wstring content;
-        unsigned char* sector_content = new unsigned char[Byte_length_content];
-        ReadSector(path, content_start_offset, sector_content, Byte_length_content);
-        formmingUniStrNTFS(sector_content, 0, Byte_length_content, content);
-        wcout << content << endl;
-    }
-    else {
-        unsigned char entry[1024];
-        ReadSector(path, content_start_offset, entry, 1024);
-        int $FILE_NAME_Atribute_ID = 152;
-        int Length_name_ID = $FILE_NAME_Atribute_ID + 88;
-        int Name_index = $FILE_NAME_Atribute_ID + 90;
-        int Byte_of_Name_length = 2 * charToInt(&entry[Length_name_ID], 1);
-        int $FILE_NAME_Atribute_length = 16 * 5 + 8 + 2 + Byte_of_Name_length;
-        int $DATA_Atribute_ID = $FILE_NAME_Atribute_ID + $FILE_NAME_Atribute_length;
-        while (charToInt(&entry[$DATA_Atribute_ID], 1) != 128)
-            $DATA_Atribute_ID++;
-
-        int Start_content_index = $DATA_Atribute_ID + charToInt(&entry[$DATA_Atribute_ID + 20], 1);
-        //wcout << Start_content_index << endl;
-        wstring content;
-        formmingUniStrNTFS(entry, Start_content_index, Byte_length_content, content);
-        wcout << content << endl;
-    }
 }
 void quanlywindow()
 {
@@ -189,25 +155,14 @@ void drawMenu()
 
 
 void formmingUniStr(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead) {
-
-    for (int i = 0; i < (maxCount +1)/ 2 && startIndex < limitByteRead; i++) {
-        if (sector[startIndex] == 0xff || sector[startIndex] == 0x00) return;
+    
+    for (int i = 0; i < (maxCount + 1) / 2 && startIndex < limitByteRead - 1; i++) {
+        if ((sector[startIndex] == 0xff && sector[startIndex + 1] == 0xff  )|| (sector[startIndex] == 0x00 && sector[startIndex + 1] == 0x00)) return;
         wchar_t temp;
         temp = sector[startIndex + 1] << 8;
         temp |= sector[startIndex] << 0;
-        if (temp == 0x0000) break;
         fullName.push_back(temp);
         startIndex += 2;
-    }
-}
-void formmingUniStrNTFS(unsigned char sector[], int startIndex, int maxCount, wstring& fullName) {
-    int i = 0;
-    if (sector[startIndex] == 0xff) i += 2;
-    for (; i < maxCount; i = i + 2) {
-        wchar_t temp;
-        temp = sector[startIndex + i + 1] << 8;
-        temp |= sector[startIndex + i] << 0;
-        fullName.push_back(temp);
     }
 }
 
@@ -219,19 +174,84 @@ void formingTree(vector<File*> listFile, vector<Folder*> listFolder,Folder*& roo
         tree[listFolder[i]->getMyID()] = listFolder[i];
     }
     for (int i = 0; i < listFolder.size(); i++) {
-        if (listFolder[i]->getParentID() == 0x0000) {
+       // wcout << i << endl;
+        if (i == 162) {
+            wcout << listFolder[i]->getName();
+        }
+        if (listFolder[i]->getParentID() == 5) {
             root->AddComponent(listFolder[i]);
         }
         else {
-            Folder* temp = tree.at(listFolder[i]->getParentID());
-            temp->AddComponent(listFolder[i]);
-            listFolder[i]->setMyParent(temp);
+
+            if (tree.find(listFolder[i]->getParentID()) != tree.end()) {
+                Folder* temp = tree[listFolder[i]->getParentID()];
+                temp->AddComponent(listFolder[i]);
+                listFolder[i]->setMyParent(temp);
+            }
         }
 
     }
     for (int i = 0; i < listFile.size(); i++) {
-        Folder* temp = tree.at(listFile[i]->getParentID());
-        temp->AddComponent(listFile[i]);
+        if (listFile[i]->getParentID() == 5) {
+            root->AddComponent(listFile[i]);
+        }
+        else {
+            if (tree.find(listFile[i]->getParentID()) != tree.end()) {
+                Folder* temp = tree[listFile[i]->getParentID()];
+                temp->AddComponent(listFile[i]);
+            }
+        }
     }
     return;
+}
+
+int extractText(unsigned char sector[], int& startIndex, int maxCount, wstring& fullName, int limitByteRead) {
+
+    for (int i = 0; i < (maxCount + 1) / 2 && startIndex < limitByteRead - 1; i++) {
+        if ((sector[startIndex] == 0xff && sector[startIndex + 1] == 0xff) || (sector[startIndex] == 0x00 && sector[startIndex + 1] == 0x00)) return 1;
+        wchar_t temp;
+        temp = sector[startIndex + 1] << 8;
+        temp |= sector[startIndex] << 0;
+        fullName.push_back(temp);
+        startIndex += 2;
+    }
+}
+
+void formmingUniStrNTFS(unsigned char sector[], int startIndex, int maxCount, wstring& fullName) {
+    int i = 0;
+    if (sector[startIndex] == 0xff) i += 2;
+    for (; i < maxCount; i = i + 2) {
+        wchar_t temp;
+        temp = sector[startIndex + i + 1] << 8;
+        temp |= sector[startIndex + i] << 0;
+        fullName.push_back(temp);
+    }
+}
+
+void print_file_NFTS_content(LPCWSTR path, unsigned long content_start_offset, int Byte_length_content) {
+    if (Byte_length_content > 700) {
+        wstring content;
+        unsigned char* sector_content = new unsigned char[Byte_length_content];
+        ReadSector(path, content_start_offset, sector_content, Byte_length_content);
+        formmingUniStrNTFS(sector_content, 0, Byte_length_content, content);
+        delete[] sector_content;
+        wcout << content << endl;
+    }
+    else {
+        unsigned char entry[1024];
+        ReadSector(path, content_start_offset, entry, 1024);
+        int $FILE_NAME_Atribute_ID = 152;
+        int Length_name_ID = $FILE_NAME_Atribute_ID + 88;
+        int Name_index = $FILE_NAME_Atribute_ID + 90;
+        int Byte_of_Name_length = 2 * charToInt(&entry[Length_name_ID], 1);
+        int $FILE_NAME_Atribute_length = 16 * 5 + 8 + 2 + Byte_of_Name_length;
+        int $DATA_Atribute_ID = $FILE_NAME_Atribute_ID + $FILE_NAME_Atribute_length;
+        while (charToInt(&entry[$DATA_Atribute_ID], 1) != 128)
+            $DATA_Atribute_ID++;
+
+        int Start_content_index = $DATA_Atribute_ID + charToInt(&entry[$DATA_Atribute_ID + 20], 1);
+        wstring content;
+        formmingUniStrNTFS(entry, Start_content_index, Byte_length_content, content);
+        wcout << content << endl;
+    }
 }
