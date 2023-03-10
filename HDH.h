@@ -14,6 +14,8 @@
 #include <memory.h>
 #include <iomanip>
 #include <map>
+#include <cwctype>
+#include <algorithm>
 using namespace std;
 
 
@@ -126,15 +128,17 @@ protected:
 public:
 	virtual wstring getName() = 0;
 	virtual unsigned long getSize() = 0;
+	virtual void displaySurfaceContent() = 0;
+	virtual void output() = 0;
 	long getMyID() { return myID; }
 	long getParentID() { return myParentID; }
 	virtual Component* findMe(wstring myName) = 0;
+	virtual wstring getType() = 0;
 	Component(wstring fullName, long size, int clusterIndex) {
 		this->size = size;
 		dataIndex = clusterIndex;
-
-//		wcout << fullName << " has been created \n";
 	}
+
 	unsigned int getStartingCluster() { return dataIndex; }
 	virtual void AddComponent(Component* obj)
 	{
@@ -163,6 +167,12 @@ public:
 		myParentID = myParent;
 		myID = ID;
 	}
+	void displaySurfaceContent() {
+		for (int i = 0; i < components.size(); ++i)
+		{
+			components[i]->output();
+		}
+	}
 	Component* findMe(wstring myName) {
 		if (name == myName) return this;
 		for (int i = 0; i < components.size(); i++) {
@@ -170,11 +180,15 @@ public:
 		}
 		return NULL;
 	}
+	Component* getMyParent() {
+		return my_parent;
+	}
 	wstring getName() { return name; }
 	void setMyParent(Folder* parent) {
 		if (parent == NULL) return;
 		this->my_parent = parent;
 	}
+	wstring getType() { return L"DIR"; }
 	bool isDulpicate(wstring wantedName) {
 		for (int i = 0; i < components.size(); i++) {
 			if (components[i]->getName() == wantedName) {
@@ -205,6 +219,9 @@ public:
 		if (obj != NULL && isDulpicate(obj->getName()) == false) {
 			components.push_back(obj);
 		}
+	}
+	void output() {
+		wcout << name << setw(16) << L"DIR" << endl;
 	}
 	~Folder()
 	{
@@ -253,7 +270,7 @@ public:
 		myID = ID;
 	}
 	wstring getName() { return name + extension; }
-
+	void displaySurfaceContent() {}
 	Component* findMe(wstring myName) {
 		if (myName == (name + extension)) {
 			return this;
@@ -270,6 +287,10 @@ public:
 	void setSize(int value)
 	{
 		size = value;
+	}
+	wstring getType() { return L"FILE"; }
+	void output() {
+		wcout << this->getName() << setw(16) << L"FILE" << endl;
 	}
 	unsigned long getSize()
 	{
@@ -433,3 +454,6 @@ void readContentFAT(Component* obj, FAT32* disk, LPCWSTR drive);
 void formingTree(vector<File*> listFile, vector<Folder*> listFolder, Folder*& root, wstring path);
 NTFS* readNTFS(LPCWSTR path);
 FAT32* readFAT32(LPCWSTR path);
+int parseCommand(wstring command, wstring& objName, wstring& extension);
+void handleOtherFiles(wstring extension);
+wstring parseExtension(wstring objName);

@@ -102,7 +102,7 @@ void readEntries(LPCWSTR  drive, int readPoint, Folder*& root, FAT32* currDisk) 
 			unsigned int clusterStarted;
 			if (checkValid - 11 >= 0 && sector[checkValid - 11] != 0xE5) {
 				int originPoin = checkValid - 11;
-				if (sector[checkValid] == 32) {
+				if (sector[checkValid] == 32 || sector[checkValid] == 1) {
 					indexByte = checkValid - 11;
 					//Lấy info cluster bắt đầu
 					size = charToInt(&sector[originPoin + 28], 4);

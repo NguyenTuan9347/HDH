@@ -4,6 +4,7 @@
 int main()
 {
     int dump = _setmode(_fileno(stdout), _O_U16TEXT);
+    int dump2 = _setmode(_fileno(stdin), _O_U16TEXT);
     int menu_item = 0;
     int x = 21;
     bool menu = true;
@@ -12,6 +13,7 @@ int main()
     LPCWSTR* path = NULL;
     Folder* root = NULL;
     wstring str_turned_to_wstr;
+    int toggle = 0;
     while (menu)
     {
         quanlywindow();
@@ -71,6 +73,7 @@ int main()
             {
                 int menu_fat32 = 0;
                 int f32 = 21;
+                int offset = 0;
                 bool mf32 = true;
                 while (mf32)
                 {
@@ -84,12 +87,17 @@ int main()
                     wcout << "Doc thong tin ";
                     GotoXY(25 + 25, 22);
                     wcout << "Cay thu muc";
-                    GotoXY(25 + 25, 23);
+                    if (root != NULL) {
+                        offset = 1;
+                        GotoXY(25 + 25, 23);
+                        wcout << "Doc file/folder";
+                    }
+                    GotoXY(25 + 25, 23 + offset);
                     wcout << "Exit";
 
                     system("pause>nul"); // the >nul bit causes it the print no message
 
-                    if (GetAsyncKeyState(VK_DOWN) && f32 != 23) // down button pressed
+                    if (GetAsyncKeyState(VK_DOWN) && f32 != 23 + offset) // down button pressed
                     {
                         GotoXY(18 + 25, f32);
                         wcout << "  ";
@@ -132,16 +140,15 @@ int main()
                         {
                             wcout << "Drive letter of USB?: ";
                             string disk = "\\\\.\\?:";
-                            char name;
-                            cin >> name;
+                            wchar_t name;
+                            wcin >> name;
                             disk[4] = name;
-                            
+
                             str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
-                            path = new LPCWSTR(str_turned_to_wstr.c_str());
-                            root = new Folder(str_turned_to_wstr, 0, -1, NULL);
+                            path = new LPCWSTR(str_turned_to_wstr.c_str());                           
                             fat32Disk = readFAT32(*path);
                             system("pause");
-                               break;
+                            break;
                         }
 
                         case 1: {
@@ -149,8 +156,9 @@ int main()
                                 wcout << "No data of disk has been found, please try again " << endl;
                                 system("pause");
                             }
-                            else { 
-                                readEntries(*path, fat32Disk->byteStartOfRDET(),root,fat32Disk);
+                            else {
+                                if(root == NULL) root = new Folder(str_turned_to_wstr, 0, -1, NULL);
+                                readEntries(*path, fat32Disk->byteStartOfRDET(), root, fat32Disk);
                                 root->displayContent(0);
                                 unsigned long reserveSize = fat32Disk->Sv * fat32Disk->bytePerSector, consumedSize = root->getSize();
                                 wcout << "Size has been used : " << consumedSize << endl;
@@ -166,15 +174,67 @@ int main()
                                 system("pause");
                             }
                             else {
-                               Component* temp = root->findMe(L"TEMP.TXT");
-                                if (temp != NULL)
-                                readContentFAT(temp, fat32Disk, *path);
-                                system("pause");
+                               
+                                int flag = -3;
+                                bool endFlag = false;
+                                Component* next, * temp = root;
+                                while (endFlag == false) {
+                                    wstring command, objName, extension;
+                                    temp->displaySurfaceContent();
+                                    wcout << "_____________________________________________________________________________________________________" << endl;
+                                    wcout << "                                             Command guide" << endl;
+                                    wcout << "- cd [folder name]: to change directory view to the designated folder" << endl;
+                                    wcout << "- open [file name]: to view contents of .txt file (or view app suggestions to open other file types)" << endl;
+                                    wcout << "NOTE: Please enter the name exactly as displayed here" << endl;
+                                    wcout << "Type here: ";
+                                    if (toggle == 0)
+                                    {
+                                        wcin.ignore();
+                                        toggle = 1;
+                                    }
+                                    getline(wcin, command);
+                                    wcout << "_____________________________________________________________________________________________________" << endl;
+                                    flag = parseCommand(command, objName, extension);
+                                    if (flag == 1) {
+                                        if (extension == L"txt" || extension == L"TXT") readContentFAT(root->findMe(objName), fat32Disk, *path);
+                                        else handleOtherFiles(extension);
+                                        system("pause");
+                                    }
+                                    else if (flag == 0) {
+                                        next = temp->findMe(objName);
+                                        if (next != NULL) {
+                                            temp = next;
+                                            if (temp->getType() == L"FILE")
+                                            {
+                                                wcout << "Wrong command syntax!" << endl;
+
+                                            }
+                                            else if (extension == L"txt" || extension == L"TXT")
+                                            {
+                                                readContentFAT(temp->findMe(objName), fat32Disk, *path);
+                                            }
+                                            else handleOtherFiles(extension);
+                                        }
+                                    }
+                                    else if (flag == -1) {
+                                        next = temp;
+                                        Folder* sudo = (Folder*)temp;
+                                        temp = (Component*)sudo->getMyParent();
+                                        if (temp == NULL) {                                          
+                                            endFlag = true;
+                                        }                                      
+                                    }
+                                    system("cls");
+                                }
                             }
                             break;
                         }
-
-
+                        case 3:
+                            mf32 = false;
+                            delete root;
+                            delete fat32Disk;
+                            root = NULL;
+                            fat32Disk = NULL;                       
                         default:
                             mf32 = false;
                             break;
@@ -192,6 +252,7 @@ int main()
             {
                 int menu_ntfs = 0;
                 int ntf = 21;
+                int offset = 0;
                 bool mntf = true;
                 while (mntf)
                 {
@@ -205,12 +266,17 @@ int main()
                     wcout << "Doc thong tin ";
                     GotoXY(25 + 25, 22);
                     wcout << "Cay thu muc";
-                    GotoXY(25 + 25, 23);
+                    if (root != NULL) {
+                        GotoXY(25 + 25, 23);
+                        wcout << "Doc file/folder ";
+                        offset = 1;
+                    }
+                    GotoXY(25 + 25, 23+ offset);
                     wcout << "Exit";
 
                     system("pause>nul"); // the >nul bit causes it the print no message
 
-                    if (GetAsyncKeyState(VK_DOWN) && ntf != 23) // down button pressed
+                    if (GetAsyncKeyState(VK_DOWN) && ntf != 23 + offset) // down button pressed
                     {
                         GotoXY(18 + 25, ntf);
                         wcout << "  ";
@@ -251,8 +317,8 @@ int main()
                         {
                             wcout << "Drive letter of USB?: ";
                             string disk = "\\\\.\\?:";
-                            char name;
-                            cin >> name;
+                            wchar_t name;
+                            wcin >> name;
                             disk[4] = name;
                             str_turned_to_wstr = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(disk);
                             path = new LPCWSTR(str_turned_to_wstr.c_str());
@@ -278,14 +344,70 @@ int main()
                             break;
                         }
 
-                        case 2: {
-                            File* wantedFile = (File*)(root->findMe(L"temp.txt"));
-                            print_file_NFTS_content(*path,wantedFile->getStartingCluster(), root->findMe(L"temp.txt")->getSize());
-                            system("pause");
+                        case 2: {                       
+                            if (ntfsDisk == NULL || path == NULL || root == NULL) {
+                                wcout << "No data of disk has been found, please try again " << endl;
+                                system("pause");
+                            }
+                            else {
+                                int flag = -3;
+                                bool endFlag = false;
+                                Component* next, * temp = root;
+                                while (endFlag == false) {
+                                    wstring command, objName, extension;
+                                    root->displaySurfaceContent();
+                                    wcout << "_____________________________________________________________________________________________________" << endl;
+                                    wcout << "                                             Command guide" << endl;
+                                    wcout << "- cd [folder name]: to change directory view to the designated folder" << endl;
+                                    wcout << "- open [file name]: to view contents of .txt file (or view app suggestions to open other file types)" << endl;
+                                    wcout << "NOTE: Please enter the name exactly as displayed here" << endl;
+                                    wcout << "Type here: ";
+                                    if (toggle == 0) {
+                                        wcin.ignore();
+                                        toggle = 1;
+                                    }
+                                    getline(wcin, command);
+                                    wcout << "_____________________________________________________________________________________________________" << endl;
+                                    flag = parseCommand(command, objName, extension);
+                                    if (flag == 1) {
+                                        if (extension == L"txt" || extension == L"TXT")  print_file_NFTS_content(*path, root->findMe(objName)->getStartingCluster(), root->findMe(objName)->getSize());
+                                        else handleOtherFiles(extension);
+                                        system("pause");
+                                    }
+                                    else if (flag == 0) {
+                                        next = temp->findMe(objName);
+                                        if (next != NULL) {
+                                            temp = next;
+                                            if (temp->getType() == L"FILE")
+                                            {
+                                                wcout << "Wrong command syntax!" << endl;
+
+                                            }
+                                            else if (extension == L"txt" || extension == L"TXT")
+                                            {
+                                                print_file_NFTS_content(*path, root->findMe(objName)->getStartingCluster(), root->findMe(objName)->getSize());
+                                            }
+                                            else handleOtherFiles(extension);
+                                        }
+                                    }
+                                    else if (flag == -1) {
+                                        next = temp;
+                                        Folder* sudo = (Folder*)temp;
+                                        temp = (Component*)sudo->getMyParent();
+                                        if (temp == NULL) {
+                                            endFlag = true;
+                                        }
+                                    }
+                                    system("cls");
+                                }
+                            }                          
+                            break;
                         }
                         case 3: {
                             delete root;
                             delete ntfsDisk;
+                            root = NULL;
+                            ntfsDisk = NULL;
                             mntf = false;
                             break;
                         }

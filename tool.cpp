@@ -255,3 +255,75 @@ void print_file_NFTS_content(LPCWSTR path, unsigned long content_start_offset, i
         wcout << content << endl;
     }
 }
+
+wstring parseExtension(wstring objName)
+{
+    int i = objName.find_last_of(L'.');
+    return objName.substr(i + 1, objName.length() - i - 1);
+}
+
+int parseCommand(wstring command, wstring & objName, wstring & extension)
+{
+    wstring temp;
+    if (command == L" " || command == L"") {
+        return -1;
+    }
+    for (int i = 0; i < command.length(); ++i)
+    {
+        if (command[i] == L' ')
+        {
+            objName = command.substr(i + 1, command.length() - i - 1);
+            if (temp == L"cd") return 0;
+            if (temp == L"open") {
+                extension = parseExtension(objName);
+                return 1;
+            }
+            
+        }
+        temp.push_back((wchar_t)command[i]);
+    }
+}
+
+void handleOtherFiles(wstring extension)
+{
+    if (extension == L"xlsx") {
+        wcout << "This program cannot read this file type. \nPlease refer to using other file viewers such as: ";
+        wcout << "Excel" << endl;
+        return;
+    }
+    if (extension == L"docx") {
+        wcout << "This program cannot read this file type. \nPlease refer to using other file viewers such as: ";
+        wcout << "Word" << endl;
+        return;
+    }
+    if (extension == L"pdf" || extension == L"PDF")
+    {
+        wcout << "This program cannot read this file type. \nPlease refer to using other file viewers such as: ";
+        wcout << "Foxit Reader / Other PDF file viewers" << endl;
+        return;
+    }
+    if (extension == L"epub" || extension == L"mobi" || extension == L"pcr")
+    {
+        wcout << "This program cannot read this file type. \nPlease refer to using other file viewers such as: ";
+        wcout << "Calibre" << endl;
+        return;
+    }
+    if (extension == L"mp3" || extension == L"MP3" || extension == L"flac" || extension == L"FLAC" || extension == L"wav" || extension == L"WAV" || extension == L"mp4" || extension == L"MP4" || extension == L"avi" || extension == L"AVI" || extension == L"mov" || extension == L"MOV")
+    {
+        wcout << "This program cannot read this file type. \nPlease refer to using other file viewers such as: ";
+        wcout << "Windows Media Player / VLC Player / Other media players" << endl;
+        return;
+    }
+    if (extension == L"png" || extension == L"PNG" || extension == L"jpg" || extension == L"JPG" || extension == L"gif" || extension == L"GIF")
+    {
+        wcout << "This program cannot read this file type. \nPlease refer to using other file viewers such as: ";
+        wcout << "Windows Photos / Other photo viewers" << endl;
+        return;
+    }
+    if (extension == L"cpp" || extension == L"py" || extension == L"jav" || extension == L"sql" || extension == L"xml")
+    {
+        wcout << "This program cannot read this file type. \nPlease refer to using other file viewers such as: ";
+        wcout << "Visual Studio Code" << endl;
+        return;
+    }
+}
