@@ -159,7 +159,7 @@ int main()
                             else {
                                 if(root == NULL) root = new Folder(str_turned_to_wstr, 0, -1, NULL);
                                 readEntries(*path, fat32Disk->byteStartOfRDET(), root, fat32Disk);
-                                root->displayContent(0);
+                                root->displayContent(0,fat32Disk,ntfsDisk);
                                 unsigned long reserveSize = fat32Disk->Sv * fat32Disk->bytePerSector, consumedSize = root->getSize();
                                 wcout << "Size has been used : " << consumedSize << endl;
                                 wcout << "Size left  : " << reserveSize << endl;
@@ -170,8 +170,12 @@ int main()
                         }
                         case 2: {
                             if (fat32Disk == NULL || path == NULL || root == NULL) {
-                                wcout << "No data of disk has been found, please try again " << endl;
-                                system("pause");
+                                delete root;
+                                delete fat32Disk;
+                                root = NULL;
+                                fat32Disk = NULL;
+                                mf32 = false;
+                                break;
                             }
                             else {
                                
@@ -196,7 +200,10 @@ int main()
                                     wcout << "_____________________________________________________________________________________________________" << endl;
                                     flag = parseCommand(command, objName, extension);
                                     if (flag == 1) {
-                                        if (extension == L"txt" || extension == L"TXT") readContentFAT(root->findMe(objName), fat32Disk, *path);
+                                        if (extension == L"txt" || extension == L"TXT") {
+                                            Component* fake = root->findMe(objName);
+                                            if (fake != NULL)  readContentFAT(fake, fat32Disk, *path);
+                                        }
                                         else handleOtherFiles(extension);
                                         system("pause");
                                     }
@@ -209,11 +216,7 @@ int main()
                                                 wcout << "Wrong command syntax!" << endl;
 
                                             }
-                                            else if (extension == L"txt" || extension == L"TXT")
-                                            {
-                                                readContentFAT(temp->findMe(objName), fat32Disk, *path);
-                                            }
-                                            else handleOtherFiles(extension);
+                                            
                                         }
                                     }
                                     else if (flag == -1) {
@@ -222,7 +225,8 @@ int main()
                                         temp = (Component*)sudo->getMyParent();
                                         if (temp == NULL) {                                          
                                             endFlag = true;
-                                        }                                      
+                                            toggle = 0;
+                                        }               
                                     }
                                     system("cls");
                                 }
@@ -335,7 +339,7 @@ int main()
                             else {
                                 ntfsDisk->Read_MFT(*path);
                                 formingTree(ntfsDisk->MasterFileTable.FileList, ntfsDisk->MasterFileTable.FolderList, root, str_turned_to_wstr);
-                                root->displayContent(0);
+                                root->displayContent(0,fat32Disk,ntfsDisk);
                                 unsigned long reserveSize = ntfsDisk->TotalSectorsT * ntfsDisk->bytePerSector, consumedSize = root->getSize();
                                 wcout << "Size has been used : " << consumedSize << endl;
                                 wcout << "Size left  : " << reserveSize << endl;
@@ -346,8 +350,12 @@ int main()
 
                         case 2: {                       
                             if (ntfsDisk == NULL || path == NULL || root == NULL) {
-                                wcout << "No data of disk has been found, please try again " << endl;
-                                system("pause");
+                                delete root;
+                                delete ntfsDisk;
+                                root = NULL;
+                                ntfsDisk = NULL;
+                                mntf = false;
+                                break;
                             }
                             else {
                                 int flag = -3;
@@ -355,14 +363,15 @@ int main()
                                 Component* next, * temp = root;
                                 while (endFlag == false) {
                                     wstring command, objName, extension;
-                                    root->displaySurfaceContent();
+                                    temp->displaySurfaceContent();
                                     wcout << "_____________________________________________________________________________________________________" << endl;
                                     wcout << "                                             Command guide" << endl;
                                     wcout << "- cd [folder name]: to change directory view to the designated folder" << endl;
                                     wcout << "- open [file name]: to view contents of .txt file (or view app suggestions to open other file types)" << endl;
                                     wcout << "NOTE: Please enter the name exactly as displayed here" << endl;
                                     wcout << "Type here: ";
-                                    if (toggle == 0) {
+                                    if (toggle == 0)
+                                    {
                                         wcin.ignore();
                                         toggle = 1;
                                     }
@@ -370,7 +379,10 @@ int main()
                                     wcout << "_____________________________________________________________________________________________________" << endl;
                                     flag = parseCommand(command, objName, extension);
                                     if (flag == 1) {
-                                        if (extension == L"txt" || extension == L"TXT")  print_file_NFTS_content(*path, root->findMe(objName)->getStartingCluster(), root->findMe(objName)->getSize());
+                                        if (extension == L"txt" || extension == L"TXT") {
+                                            Component* fake = root->findMe(objName);
+                                            if (fake != NULL)  print_file_NFTS_content(*path, fake->getStartingCluster(), fake->getSize());
+                                        }
                                         else handleOtherFiles(extension);
                                         system("pause");
                                     }
@@ -383,11 +395,6 @@ int main()
                                                 wcout << "Wrong command syntax!" << endl;
 
                                             }
-                                            else if (extension == L"txt" || extension == L"TXT")
-                                            {
-                                                print_file_NFTS_content(*path, root->findMe(objName)->getStartingCluster(), root->findMe(objName)->getSize());
-                                            }
-                                            else handleOtherFiles(extension);
                                         }
                                     }
                                     else if (flag == -1) {
@@ -396,9 +403,11 @@ int main()
                                         temp = (Component*)sudo->getMyParent();
                                         if (temp == NULL) {
                                             endFlag = true;
+                                            toggle = 0;
                                         }
+
                                     }
-                                    system("cls");
+                                    system("cls");                            
                                 }
                             }                          
                             break;

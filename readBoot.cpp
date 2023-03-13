@@ -4,7 +4,7 @@ NTFS* readNTFS(LPCWSTR path) {
 	unsigned char sector[512];
 	ReadSector(path, 0, sector, 512);
 	wprintf(L"Bytes Per Sector : %u \n", charToInt(&sector[bytePerSectorIndex], 2));
-	wprintf(L"Cluster per sector : %u \n", charToInt(&sector[SectorPerCluster], 1));
+	wprintf(L"Sector per cluster : %u \n", charToInt(&sector[SectorPerCluster], 1));
 	wprintf(L"Reserved Sectors : %u \n", charToInt(&sector[ReservedSectors], 2));
 	wprintf(L"Sectors Per Track : %u \n", charToInt(&sector[SectorPerTrack], 2));
 	wprintf(L"Number Of Heads : %u \n", charToInt(&sector[numberOfHead], 2));
@@ -21,7 +21,7 @@ FAT32* readFAT32(LPCWSTR path) {
 	unsigned char sector[512];
 	ReadSector(path, 0, sector, 512);
 	wprintf(L"Byte per sector : %u \n", charToInt(&sector[bytePerSectorIndex], 2));
-	wprintf(L"Cluster per sector : %u \n", charToInt(&sector[ScIndex], 1));
+	wprintf(L"Sector per cluster : %u \n", charToInt(&sector[ScIndex], 1));
 	wprintf(L"Sector per Bootsector %u \n", charToInt(&sector[SbIndex], 2));
 	wprintf(L"Number of FAT table : %u \n", charToInt(&sector[nFIndex], 1));
 	wprintf(L"Sector per track : %u \n", charToInt(&sector[SectorperTrackIndex], 2));
@@ -181,7 +181,6 @@ void readContentFAT(Component* obj, FAT32* disk, LPCWSTR drive) {
 		if (i == 0 && (sector[0] != 0xFF || sector[1] != 0xFE)) return;
 		if (i == 0) indexByte = 2;
 		for (int j = 0; j < disk->Sc; ++j) {
-			//formmingUniStr(sector, indexByte, 512, fileContent, 512);
 			if (extractText(sector, indexByte, 512, fileContent, 512) == 1) {
 				wcout << fileContent;
 				return;

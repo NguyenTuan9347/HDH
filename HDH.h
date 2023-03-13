@@ -16,6 +16,7 @@
 #include <map>
 #include <cwctype>
 #include <algorithm>
+#include "Composite.h"
 using namespace std;
 
 
@@ -118,12 +119,17 @@ public:
 	}
 };
 
+
+
+void formmingUniStrNTFS(unsigned char sector[], int startIndex, int maxCount, wstring& fullName);
+void print_file_NFTS_content(LPCWSTR path, unsigned long content_start_offset, int Byte_length_content);
+class NTFS;
 class Component
 {
 protected:
 	wstring name;
 	unsigned int dataIndex = 0;
-	unsigned long size = 0; 
+	unsigned long size = 0;
 	long myParentID = 0, myID = 0;
 public:
 	virtual wstring getName() = 0;
@@ -138,13 +144,12 @@ public:
 		this->size = size;
 		dataIndex = clusterIndex;
 	}
-
 	unsigned int getStartingCluster() { return dataIndex; }
 	virtual void AddComponent(Component* obj)
 	{
 
 	}
-	virtual void displayContent(int padding) = 0;
+	virtual void displayContent(int padding, FAT32* rootF, NTFS* rootN) = 0;
 	virtual void RemoveComponent(Component* obj)
 	{
 
@@ -152,7 +157,6 @@ public:
 	virtual ~Component() {
 	}
 };
-
 class Folder : public Component {
 	Component* my_parent = nullptr;
 	vector<Component*> components;
@@ -198,18 +202,21 @@ public:
 		return false;
 	}
 
-	void displayContent(int padding) {
+	void displayContent(int padding, FAT32* rootF, NTFS* rootN) {
 		long temp = padding + this->getName().size();
 		wcout << setw(temp);
-		wcout << this->getName() << "     " << L"DIR" << "     " << endl;
+		wcout << this->getName() << "     " << L"DIR";
+		if (my_parent != NULL && rootF != NULL) wcout << "     " << rootF->clusterToByte(this->getStartingCluster())/512;
+		if (my_parent != NULL && rootN != NULL) wcout << "     " << this->getStartingCluster()/512;
+		wcout << endl;
 		padding += 4;
 		for (int i = 0; i < components.size(); ++i) {
-			components[i]->displayContent(padding);
+			components[i]->displayContent(padding, rootF, rootN);
 		}
 	}
 	unsigned long getSize() {
 		size = 0;
-		for (int i = 0; i < components.size(); ++i){
+		for (int i = 0; i < components.size(); ++i) {
 			size += components[i]->getSize();
 		}
 		return size;
@@ -279,9 +286,12 @@ public:
 			return NULL;
 		}
 	}
-	void displayContent(int padding) {
+	void displayContent(int padding, FAT32* rootF, NTFS* rootN) {
 		long temp = padding + this->getName().size();
-		wcout << setw(temp) << this->getName() << "     " << L"FILE" << "     " << size << endl;
+		wcout << setw(temp) << this->getName() << "     " << L"FILE" << "     " << size;
+		if (rootF != NULL) wcout << "     " << rootF->clusterToByte(this->getStartingCluster()) / 512;
+		if (rootN != NULL) wcout << "     " << this->getStartingCluster() / 512;
+		wcout << endl;
 	}
 	wstring getExtension() { return extension; }
 	void setSize(int value)
@@ -298,11 +308,8 @@ public:
 	}
 };
 
-void formmingUniStrNTFS(unsigned char sector[], int startIndex, int maxCount, wstring& fullName);
-void print_file_NFTS_content(LPCWSTR path, unsigned long content_start_offset, int Byte_length_content);
-
 class MFT {
-	
+
 	bool resident_content_check(unsigned char sector[], int id) {
 		if (sector[id] == 0)
 			return 1;
@@ -323,7 +330,7 @@ class MFT {
 			return 1;
 		return 0;
 	}
-	void Get_Size_content_resident(unsigned char entry[], int $DATA_Atribute_ID,unsigned int& Byte_length_content, unsigned long& Start_content_index) {
+	void Get_Size_content_resident(unsigned char entry[], int $DATA_Atribute_ID, unsigned int& Byte_length_content, unsigned long& Start_content_index) {
 		int Size_Data_ID = $DATA_Atribute_ID + 16;
 		Byte_length_content = charToInt(&entry[Size_Data_ID], 4);
 		Start_content_index = $DATA_Atribute_ID + charToInt(&entry[$DATA_Atribute_ID + 20], 1);
@@ -399,6 +406,7 @@ public:
 		}
 	}
 };
+
 class NTFS {
 public:
 	MFT MasterFileTable;
@@ -407,16 +415,9 @@ public:
 	int SectorPerClusterT, HiddenSectors, unused4, unused5;
 	long long TotalSectorsT, LogicalClusterNumber$MFT, LogicalClusterNumber$MFTMirr, VolumeSerialNumber;
 	NTFS(unsigned char sector[]) {
-		//--char
 		SectorPerClusterT = charToInt(&sector[SectorPerCluster_], 1);
 		MediaDescriptor = char(charToInt(&sector[MediaDescriptor_], 1));
 		ClustersPerIndexBufferT = char(charToInt(&sector[ClustersPerIndexBuffer_], 1));
-
-		//cout << "SectorPerCluster:  " << SectorPerCluster << endl;
-		//cout << "MediaDescriptor:  " << MediaDescriptor << endl;
-		//cout << "ClustersPerIndexBuffer:  " << ClustersPerIndexBuffer << endl;
-
-		//--short
 		bytePerSector = charToInt(&sector[bytePerSector_], 2);
 		ReservedSectorsT = charToInt(&sector[ReservedSectors_], 2);
 		unused2 = charToInt(&sector[u2_], 2);
@@ -438,6 +439,9 @@ public:
 		return LogicalClusterNumber$MFT * SectorPerClusterT * 512 + 39936;
 	}
 };
+
+
+
 
 
 void drawMenu();

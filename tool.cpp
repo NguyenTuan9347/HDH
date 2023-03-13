@@ -180,6 +180,7 @@ void formingTree(vector<File*> listFile, vector<Folder*> listFolder,Folder*& roo
         }
         if (listFolder[i]->getParentID() == 5) {
             root->AddComponent(listFolder[i]);
+            listFolder[i]->setMyParent(root);
         }
         else {
 
